@@ -49,7 +49,8 @@ func (p *Problem) show(file *os.File) {
 }
 
 func main() {
-	for i := 1; i <= 45; i++ {
+	for i := 1; i <= 55; i++ {
+		fmt.Println(i)
 		initJson, err := os.ReadFile(fmt.Sprintf("../problem.json/%d.json", i))
 		if err != nil {
 			panic(err)
