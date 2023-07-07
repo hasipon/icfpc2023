@@ -22,7 +22,7 @@ def submit(problem_id: int, contents: str):
     print(response.getcode())
     response_body = response.read()
     print(response_body)
-    return response_body
+    return response_body.decode('utf-8')
 
 
 def main():
@@ -37,8 +37,8 @@ def main():
         with open(solution) as f:
             contents = f.read()
             response = submit(problem_id, contents)
-            print(type(response))
-            #TODO save response to .submission
+            with open('{}.submission'.format(solution), mode="w") as subfile:
+                subfile.write(response.strip("\""))
 
 
 if __name__ == "__main__":
