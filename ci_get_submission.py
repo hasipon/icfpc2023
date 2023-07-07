@@ -34,7 +34,6 @@ def main():
         with open('{}.result'.format(submission), mode="w") as result_file:
             result_file.write(response.strip("\""))
             result_file.write("\n")
-        exit(0)
 
 
 if __name__ == "__main__":
