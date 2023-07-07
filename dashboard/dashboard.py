@@ -186,7 +186,7 @@ def get_index():
             })
 
     for pid, s in solutions.items():
-        s.sort(reverse=True)
+        s.sort(key=lambda x: x["score"], reverse=True)
 
 
     # for row in solutions_rows:
