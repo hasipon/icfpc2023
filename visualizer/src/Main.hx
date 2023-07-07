@@ -9,7 +9,7 @@ import js.html.InputElement;
 import js.html.TextAreaElement;
 import pixi.core.Application;
 import pixi.core.graphics.Graphics;
-import Data.Problem;
+import data.Data;
 
 class Main
 {
@@ -21,7 +21,9 @@ class Main
 	static var input       :TextAreaElement;
 	static var problem     :Problem;
 	static var problemGraphics:Graphics;
+	static var answerGraphics :Graphics;
 	static var scale          :Float;
+	static var answer:Answer;
 	
 	static function main() 
 	{
@@ -36,6 +38,7 @@ class Main
 			autoResize: true,
 		});
 		mainPixi.stage.addChild(problemGraphics = new Graphics());
+		mainPixi.stage.addChild(answerGraphics  = new Graphics());
 		
 		problemInput = cast Browser.document.getElementById("problem");
 		problemInput.onchange = onProblemChanged;
@@ -91,9 +94,16 @@ class Main
 		currentProblem = problemId;
 		
 		problem = Json.parse(json);
-		var scaleX = 720 / problem.room_width;
-		var scaleY = 480 / problem.room_height;
-		var scale = Math.min(scaleX, scaleY);
+		var w = 1.0;
+		var h = 1.0;
+		for (a in problem.attendees)
+		{
+			if (w < a.x) { w = a.x; }
+			if (h < a.y) { h = a.y; }
+		}
+		var scaleX = 720 / w;
+		var scaleY = 480 / h;
+		scale = Math.min(scaleX, scaleY);
 		problemGraphics.clear();
 		problemGraphics.beginFill(0x000000, 1);
 		for (a in problem.attendees)
@@ -119,6 +129,18 @@ class Main
 	
 	static function onInputChanged():Void
 	{
+		answer = Json.parse(input.value);
+		answerGraphics.clear();
+		answerGraphics.beginFill(0xFF0000, 1);
+		for (p in answer.placements)
+		{
+			answerGraphics.drawCircle(
+				p.x * scale, 
+				480 - p.y * scale, 
+				10 * scale
+			);
+		}
+		trace("draw");
 	}
 	
 	private static function setHash():Void 
