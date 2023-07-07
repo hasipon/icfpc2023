@@ -188,7 +188,6 @@ def get_index():
     for pid, s in solutions.items():
         s.sort(key=lambda x: x["score"], reverse=True)
 
-
     # for row in solutions_rows:
     #    solutions[row.problem_id].append(row)
 
