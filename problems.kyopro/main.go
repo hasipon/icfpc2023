@@ -28,9 +28,14 @@ func (p *Problem) show(file *os.File) {
 	fmt.Fprintf(file, "%f %f\n", p.RoomWidth, p.RoomHeight)
 	fmt.Fprintf(file, "%f %f\n", p.StageWidth, p.StageHeight)
 	fmt.Fprintf(file, "%f %f\n", p.StageBottomLeft[0], p.StageBottomLeft[1])
-	fmt.Fprintf(file, "%d\n", len(p.Musicians))
+	cnt := map[int]bool{}
+	for _, m := range p.Musicians {
+		cnt[m] = true
+	}
+	fmt.Fprintf(file, "%d %d\n", len(p.Musicians), len(cnt))
 	for _, m := range p.Musicians {
 		fmt.Fprintf(file, "%d ", m)
+		cnt[m] = true
 	}
 	fmt.Fprintf(file, "\n")
 	fmt.Fprintf(file, "%d\n", len(p.Attendees))
