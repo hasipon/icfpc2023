@@ -4,18 +4,20 @@ import json
 import urllib.request
 import urllib.parse
 
+AWESOME_UA='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
+
 
 def submit(problem_id: int, contents: str):
     assert os.getenv("ICFPC_TOKEN")
     token = os.getenv("ICFPC_TOKEN")
     data = {
-        "problem_id": problem_id,
+        "problem_id": int(problem_id),
         "contents": contents,
     }
     request = urllib.request.Request(
         "https://api.icfpcontest.com/submission",
         json.dumps(data).encode(),
-        headers={'Authorization': 'Bearer {}'.format(token)})
+        headers={'Authorization': 'Bearer {}'.format(token), 'User-Agent': AWESOME_UA, 'Content-Type': 'application/json'})
     response = urllib.request.urlopen(request)
     print(response.getcode())
     response_body = response.read()
