@@ -1,0 +1,18 @@
+name: Submit
+
+on:
+  push:
+    branches: [ "main" ]
+    paths: ["solutions/*.json.submission"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: [runner1]
+    permissions: write-all
+    steps:
+      - uses: actions/checkout@v2
+      - name: ci_get_submission
+        run: ICFPC_TOKEN=$(cat /home/ubuntu/ICFPC_TOKEN) python3 ci_get_submission.py
+      - name: commit
+        run: git add solutions/*.submission.result; git commit -m "ci_get_submission"; git push
