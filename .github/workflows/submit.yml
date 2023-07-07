@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     runs-on: [runner1]
-
+    permissions: write-all
     steps:
       - uses: actions/checkout@v2
       - name: ci_submit
