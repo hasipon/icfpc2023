@@ -1,3 +1,4 @@
+#include <iostream>
 #include <vector>
 #include <cmath>
 #include <complex>
@@ -67,6 +68,44 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
     return {true,score};
 }
 
-int main() {
+vector<pair<double, double>> solve(const Problem& problem) {
+    vector<pair<double, double>> res(problem.musicians.size());
+    double x = problem.stageBottom + 10;
+    double y = problem.stageLeft + 10;
+    for (auto & re : res) {
+        re = {x, y};
+        x += 10;
+        if (x > problem.stageBottom + problem.stageHeight - 10) {
+            x = problem.stageBottom + 10;
+            y += 10;
+        }
+    }
+    return res;
+}
 
+int main() {
+    Problem problem;
+    cin >> problem.roomWidth >> problem.roomHeight;
+    cin >> problem.stageWidth >> problem.stageHeight;
+    cin >> problem.stageBottom >> problem.stageLeft;
+    int musicianN, tasteN, attendeeN;
+    cin >> musicianN >> tasteN;
+    problem.musicians.resize(musicianN);
+    for (auto& m : problem.musicians) {
+        cin >> m;
+    }
+    cin >> attendeeN;
+    problem.attendees.resize(attendeeN);
+    for (auto& a : problem.attendees) {
+        cin >> a.x >> a.y;
+        a.tastes.resize(tasteN);
+        for (auto& t : a.tastes) {
+            cin >> t;
+        }
+    }
+
+    auto placement = solve(problem);
+    auto res = calcScore(problem, placement);
+    if (!res.first) throw runtime_error("invalid placement");
+    cerr << "score = " << res.second << endl;
 }
