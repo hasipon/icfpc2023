@@ -65,6 +65,7 @@ Main.main = function() {
 	Main.mainCanvas = window.document.getElementById("pixi");
 	Main.mainPixi = new PIXI.Application({ view : Main.mainCanvas, transparent : true, width : Main.mainCanvas.width, height : Main.mainCanvas.height, autoResize : true});
 	Main.mainPixi.stage.addChild(Main.problemGraphics = new PIXI.Graphics());
+	Main.mainPixi.stage.addChild(Main.answerGraphics = new PIXI.Graphics());
 	Main.problemInput = window.document.getElementById("problem");
 	Main.problemInput.onchange = Main.onProblemChanged;
 	Main.problemInput.oninput = Main.onProblemChanged;
@@ -113,9 +114,23 @@ Main.onProblemGet = function(problemId,json) {
 	}
 	Main.currentProblem = problemId;
 	Main.problem = JSON.parse(json);
-	var scaleX = 720 / Main.problem.room_width;
-	var scaleY = 480 / Main.problem.room_height;
-	var scale = Math.min(scaleX,scaleY);
+	var w = 1.0;
+	var h = 1.0;
+	var _g = 0;
+	var _g1 = Main.problem.attendees;
+	while(_g < _g1.length) {
+		var a = _g1[_g];
+		++_g;
+		if(w < a.x) {
+			w = a.x;
+		}
+		if(h < a.y) {
+			h = a.y;
+		}
+	}
+	var scaleX = 720 / w;
+	var scaleY = 480 / h;
+	Main.scale = Math.min(scaleX,scaleY);
 	Main.problemGraphics.clear();
 	Main.problemGraphics.beginFill(0,1);
 	var _g = 0;
@@ -123,15 +138,26 @@ Main.onProblemGet = function(problemId,json) {
 	while(_g < _g1.length) {
 		var a = _g1[_g];
 		++_g;
-		Main.problemGraphics.drawCircle(a.x * scale,480 - a.y * scale,1);
+		Main.problemGraphics.drawCircle(a.x * Main.scale,480 - a.y * Main.scale,1);
 	}
 	Main.problemGraphics.endFill();
 	Main.problemGraphics.beginFill(255,0.1);
 	Main.problemGraphics.lineStyle(1,255,1);
-	Main.problemGraphics.drawRect(Main.problem.stage_bottom_left[0] * scale,480 - (Main.problem.stage_height + Main.problem.stage_bottom_left[1]) * scale,Main.problem.stage_width * scale,Main.problem.stage_height * scale);
+	Main.problemGraphics.drawRect(Main.problem.stage_bottom_left[0] * Main.scale,480 - (Main.problem.stage_height + Main.problem.stage_bottom_left[1]) * Main.scale,Main.problem.stage_width * Main.scale,Main.problem.stage_height * Main.scale);
 	Main.onInputChanged();
 };
 Main.onInputChanged = function() {
+	Main.answer = JSON.parse(Main.input.value);
+	Main.answerGraphics.clear();
+	Main.answerGraphics.beginFill(16711680,1);
+	var _g = 0;
+	var _g1 = Main.answer.placements;
+	while(_g < _g1.length) {
+		var p = _g1[_g];
+		++_g;
+		Main.answerGraphics.drawCircle(p.x * Main.scale,480 - p.y * Main.scale,10 * Main.scale);
+	}
+	Main.setHash();
 };
 Main.setHash = function() {
 	var tmp = "#" + Std.parseInt(Main.problemInput.value) + ";";

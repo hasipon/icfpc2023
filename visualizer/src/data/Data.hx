@@ -1,4 +1,4 @@
-package ;
+package data ;
 
 /**
  * ...
@@ -13,6 +13,14 @@ typedef Problem =
 	stage_bottom_left: Array<Float>,
 	musicians: Array<Int>,
 	attendees:Array<Attendee>,
+}
+
+typedef Answer = 
+{
+	placements:Array<{
+		x:Float,
+		y:Float
+	}>,
 }
 
 typedef Attendee = {
