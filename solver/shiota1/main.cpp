@@ -12,51 +12,61 @@ public:
 };
 
 typedef long long ll;
-typedef pair<int, int> pii
 typedef vector<double> vd;
+typedef vector<int> vi;
 
 
 const double MUSICIAN_OFFSET = 10;
 
-double roomW, roomH, stageW, stageH, stageX, stageY
-int musicianN, tasteN;
-vd musicianTaste(musicianN);
-int attendeeN;
-vi attendeeTasteWeight(attendeeN);
-vector<Pos> attendeePos(attendeeN);
+class Problem {
+public:
+    double roomW, roomH, stageW, stageH, stageX, stageY;
+    int musicianN, tasteN;
+    vi musicianTaste;
+    int attendeeN;
+    vector<vd> attendeeTasteWeight;
+    vector<Pos> attendeePos;
+};
 
-void input(){
-    cin >> roomW >> roomH;
-    cin >> stageW >> stageH;
-    cin >> stageX >> stageY;
 
-    cin >> musicianN >> tasteN;
+Problem input() {
 
-    rep(i, musicianN){
-        cin >> musicianTaste[i];
+    Problem p;
+
+    cin >> p.roomW >> p.roomH;
+    cin >> p.stageW >> p.stageH;
+    cin >> p.stageX >> p.stageY;
+
+    cin >> p.musicianN >> p.tasteN;
+    p.musicianTaste = vi(p.musicianN);
+
+    rep(i, p.musicianN){
+        cin >> p.musicianTaste[i];
     }
 
-    cin >> attendeeN;
+    cin >> p.attendeeN;
+    p.attendeeTasteWeight = vector<vd>(p.attendeeN);
+    p.attendeePos = vector<Pos>(p.attendeeN);
 
-    rep(i, attendeeN){
-        cin >> attendeePos[i].x >> attendeePos[i].y;
-        rep(j, tasteN){
-            cin >> attendeeTasteWeight[j];
+    rep(i, p.attendeeN){
+        cin >> p.attendeePos[i].x >> p.attendeePos[i].y;
+        p.attendeeTasteWeight[i] = vd(p.tasteN);
+        rep(j, p.tasteN){
+            cin >> p.attendeeTasteWeight[i][j];
+            cout << p.attendeeTasteWeight[i][j] << ' ';
         }
     }
+    return p;
 }
 
 int main() {
 
+    Problem p = input();
     // offset
-    stageX += MUSICIAN_OFFSET;
-    stageY += MUSICIAN_OFFSET;
-    stageH -= MUSICIAN_OFFSET;
-    stageW -= MUSICIAN_OFFSET;
+    p.stageX += MUSICIAN_OFFSET;
+    p.stageY += MUSICIAN_OFFSET;
+    p.stageH -= MUSICIAN_OFFSET;
+    p.stageW -= MUSICIAN_OFFSET;
 
-    //
-
-
-    std::cout << "Hello, World!" << std::endl;
     return 0;
 }
