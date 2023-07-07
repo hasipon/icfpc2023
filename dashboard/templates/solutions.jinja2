@@ -1,0 +1,36 @@
+{% extends "base.jinja2" %}
+{% block content %}
+    <div class="container-fluid">
+        <h2> {{ problem_id }}.{{ problem_name }} ({{ solutions|length }} 件)</h2>
+        表示:
+        <a href="{{ url_for("get_solutions", problem_id=problem_id) }}">デフォルト</a>
+        <a href="{{ url_for("get_solutions", problem_id=problem_id, invalid=1) }}">Invalid</a>
+        <table class="table">
+            {% for s in solutions %}
+                {% if loop.index0 % 4 == 0 -%}
+                    <tr>
+                {% endif -%}
+
+            <td class="text-center" id="{{ s.id }}">
+                <a href="/vis/{{ s.id }}">
+                    <img src="http://35.221.99.118/repo/solutions/{{ s.id }}.png">
+                </a>
+                <br/>
+                <a href="http://35.221.99.118/repo/solutions/{{ s.id }}">
+                    {{ s.id }}
+                </a>
+                <a href="/eval_output/{{ s.id }}"> (eval-output) </a>
+                <dl>
+                    <dt> {{ s.cost }} </dt>
+                    <dd> {{ s.isl_cost }}(move) + {{ s.sim_cost }}(sim)</dd>
+                </dl>
+            </td>
+
+            {% if loop.index0 % 4 == 3 or loop.last -%}
+                </tr>
+            {% endif -%}
+            {% endfor %}
+        </table>
+    </div>
+{% endblock %}
+

@@ -1,0 +1,98 @@
+{% extends "base.jinja2" %}
+{% block content %}
+    <div class="container-fluid">
+        <h2>問題一覧 ({{ problems|length }} 件)</h2>
+        <dl>
+            <dt>Solved</dt>
+            <dd>{{ result_by_api.solved_problem_count }} / {{ problems|length }}</dd>
+            <dt>TotalCost</dt>
+            <dd>{{ result_by_api.total_cost }}</dd>
+        </dl>
+        表示: <a href="/">デフォルト</a> <a href="/?sort-by=min_cost&desc=1">コスト高い順</a> <a href="/?sort-by=diff&desc=1">トップとの差が大きい順</a>
+        <br/>
+        <table class="table">
+            <tr>
+                <th class="text-center" scope="col">Problem</th>
+                <th class="text-center" scope="col">Source</th>
+                <th class="text-center" scope="col">Target</th>
+                <th class="text-center" scope="col">Solutions 1st</th>
+                <th class="text-center" scope="col">Solutions 2nd</th>
+            </tr>
+
+            {% for p in problems %}
+                <tr>
+                    <td class="text-center" id="{{ p.problem_name }}">
+                        <dl>
+                            <dt> {{ p.id }}.{{ p.problem_name }} </dt>
+                            <dd> Cost: {{ p.min_cost }} </dd>
+                            <dd> Top: {{ p.overall_best_cost }} </dd>
+                            <dd> Diff: {{ p.min_cost - p.overall_best_cost }} </dd>
+                        </dl>
+                        <br>
+                        <a href="/solutions/{{ p.id }}">回答一覧</a>
+                    </td>
+                    <td class="text-center">
+                        {% if p.initial %}
+                            <a href="http://35.221.99.118/repo/problems/{{ p.before_png }}">
+                                <img src="http://35.221.99.118/repo/problems/{{ p.before_png }}">
+                            </a>
+                            <br/>
+                            <a href="http://35.221.99.118/repo/problems/{{ p.id }}.initial.json">
+                                {{ p.id }}.initial.json
+                            </a>
+                        {% else %}
+                            No initial.json
+                        {% endif %}
+                    </td>
+
+                    <td class="text-center">
+                        <a href="http://35.221.99.118/repo/problems/{{ p.id }}.png">
+                            <img src="http://35.221.99.118/repo/problems/{{ p.id }}.png">
+                        </a>
+                    </td>
+
+                    <td class="text-center">
+                        {% if 0 < solutions[p.id] | length %}
+                            {% set s = solutions[p.id][0] %}
+                            <a href="/vis/{{ s.id }}">
+                                <img src="http://35.221.99.118/repo/solutions/{{ s.id }}.png">
+                            </a>
+                            <br/>
+                            <a href="http://35.221.99.118/repo/solutions/{{ s.id }}">
+                                {{ s.id }}
+                            </a>
+                            <a href="/eval_output/{{ s.id }}"> (eval-output) </a>
+                            <dl>
+                                <dt> {{ s.cost }} </dt>
+                                <dd> {{ s.isl_cost }}(move) + {{ s.sim_cost }}(sim)</dd>
+                            </dl>
+                        {% else %}
+                            <p>No submission</p>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if 1 < solutions[p.id] | length %}
+                            {% set s = solutions[p.id][1] %}
+                            <a href="/vis/{{ s.id }}">
+                                <img src="http://35.221.99.118/repo/solutions/{{ s.id }}.png">
+                            </a>
+                            <br/>
+                            <a href="http://35.221.99.118/repo/solutions/{{ s.id }}">
+                                {{ s.id }}
+                            </a>
+                            <a href="/eval_output/{{ s.id }}"> (eval-output) </a>
+                            <dl>
+                                <dt> {{ s.cost }} </dt>
+                                <dd> {{ s.isl_cost }}(move) + {{ s.sim_cost }}(sim)</dd>
+                            </dl>
+                        {% else %}
+                            <p>No submission</p>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+{% endblock %}
+
