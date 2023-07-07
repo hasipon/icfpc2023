@@ -13,8 +13,10 @@
         <table class="table">
             <tr>
                 <th class="text-center" scope="col">Problem</th>
-                <th class="text-center" scope="col">Source</th>
-                <th class="text-center" scope="col">Target</th>
+                <th class="text-center" scope="col">Image</th>
+                <th class="text-center" scope="col">Room & Stage</th>
+                <th class="text-center" scope="col">Musicians</th>
+                <th class="text-center" scope="col">Attendees</th>
                 <th class="text-center" scope="col">Solutions 1st</th>
                 <th class="text-center" scope="col">Solutions 2nd</th>
             </tr>
@@ -23,26 +25,11 @@
                 <tr>
                     <td class="text-center" id="{{ p.problem_name }}">
                         <dl>
-                            <dt> {{ p.id }}.{{ p.problem_name }} </dt>
-                            <dd> Cost: {{ p.min_cost }} </dd>
-                            <dd> Top: {{ p.overall_best_cost }} </dd>
-                            <dd> Diff: {{ p.min_cost - p.overall_best_cost }} </dd>
+                            <a href="http://35.221.99.118/repo/problem.json/{{ p.id }}.json">{{ p.name }}</a>
+                            <dd> Best: {{ p.best_score }} </dd>
                         </dl>
                         <br>
                         <a href="/solutions/{{ p.id }}">回答一覧</a>
-                    </td>
-                    <td class="text-center">
-                        {% if p.initial %}
-                            <a href="http://35.221.99.118/repo/problems/{{ p.before_png }}">
-                                <img src="http://35.221.99.118/repo/problems/{{ p.before_png }}">
-                            </a>
-                            <br/>
-                            <a href="http://35.221.99.118/repo/problems/{{ p.id }}.initial.json">
-                                {{ p.id }}.initial.json
-                            </a>
-                        {% else %}
-                            No initial.json
-                        {% endif %}
                     </td>
 
                     <td class="text-center">
@@ -52,39 +39,27 @@
                     </td>
 
                     <td class="text-center">
+                        {{ p.room_width }} x {{ p.room_height }} <br>
+                        {{ p.stage_width }} x {{ p.stage_height }} <br>
+                        {{ p.stage_bottom_left }}
+                    </td>
+
+                    <td class="text-center">
+                        {{ p.musicians_size }}
+                    </td>
+
+                    <td class="text-center">
+                        {{ p.attendees_size }}
+                    </td>
+
+                    <td class="text-center">
                         {% if 0 < solutions[p.id] | length %}
-                            {% set s = solutions[p.id][0] %}
-                            <a href="/vis/{{ s.id }}">
-                                <img src="http://35.221.99.118/repo/solutions/{{ s.id }}.png">
-                            </a>
-                            <br/>
-                            <a href="http://35.221.99.118/repo/solutions/{{ s.id }}">
-                                {{ s.id }}
-                            </a>
-                            <a href="/eval_output/{{ s.id }}"> (eval-output) </a>
-                            <dl>
-                                <dt> {{ s.cost }} </dt>
-                                <dd> {{ s.isl_cost }}(move) + {{ s.sim_cost }}(sim)</dd>
-                            </dl>
                         {% else %}
                             <p>No submission</p>
                         {% endif %}
                     </td>
                     <td class="text-center">
                         {% if 1 < solutions[p.id] | length %}
-                            {% set s = solutions[p.id][1] %}
-                            <a href="/vis/{{ s.id }}">
-                                <img src="http://35.221.99.118/repo/solutions/{{ s.id }}.png">
-                            </a>
-                            <br/>
-                            <a href="http://35.221.99.118/repo/solutions/{{ s.id }}">
-                                {{ s.id }}
-                            </a>
-                            <a href="/eval_output/{{ s.id }}"> (eval-output) </a>
-                            <dl>
-                                <dt> {{ s.cost }} </dt>
-                                <dd> {{ s.isl_cost }}(move) + {{ s.sim_cost }}(sim)</dd>
-                            </dl>
                         {% else %}
                             <p>No submission</p>
                         {% endif %}

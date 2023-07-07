@@ -22,13 +22,16 @@ from sqlalchemy.orm import scoped_session, sessionmaker, declarative_base
 visualizer_url = "http://35.221.99.118/repo/visualizer"
 static_path = pathlib.Path(__file__).resolve().parent / 'static'
 repo_path = pathlib.Path(__file__).resolve().parent.parent
-problems_path = repo_path / "problem"
+problems_path = repo_path / "problem.json"
 app = Flask(__name__, static_folder=str(static_path), static_url_path='')
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
-# TODO: mysql
-# engine = create_engine('mysql+pymysql://icfpc2022:icfpc2022@{host}/icfpc2022?charset=utf8'.format(**{ 'host': os.environ.get('DB_HOST', 'localhost'), }))
-engine = None
+engine = create_engine('mysql+pymysql://{user}:{password}@{host}/{db}?charset=utf8'.format(**{
+    'host': os.environ.get('DB_HOST', 'localhost'),
+    'db': os.environ.get('DB_NAME', 'main'),
+    'user': os.environ.get('DB_USER', 'dp'),
+    'password': os.environ.get('DB_PASSWORD', 'password'),
+}))
 
 CORS(
     app,
@@ -96,30 +99,35 @@ def get_solutions(problem_id: str):
     #    result_by_api = json.load(f)
     result_by_api = {}
 
-    problem_name = ""
-    for result in result_by_api["results"]:
-        if result["problem_id"] == int(problem_id):
-            problem_name = result["problem_name"]
-            break
-
     return render_template(
         'solutions.jinja2',
         problem_id=problem_id,
-        problem_name=problem_name,
+        problem_name="",
         solutions=solutions
     )
 
 
 @app.route('/')
 def get_index():
-    problem_files = list(filter(
-        lambda x: x[:-4].isdigit(),
-        [os.path.relpath(x, problems_path) for x in glob.glob(str(problems_path / "*.png"))]))
-    problem_files.sort(key=lambda x: int(x[:-4]))
-    problems = [{"id": int(x[:-4])} for x in problem_files]
+    problem_files = list([os.path.relpath(x, problems_path) for x in glob.glob(str(problems_path / "*.json"))])
+    problem_files.sort(key=lambda x: int(x[:-5]))
+    problems = [{"id": int(x[:-5]), "name": x} for x in problem_files]
     problems_dict = {int(x["id"]): x for x in problems}
 
     for p in problems:
+        p["best_score"] = 0
+        with open(problems_path / p["name"]) as f:
+            print(p["name"])
+            js = json.load(f)
+            print(p["name"], "done")
+            p["room_width"] = js["room_width"]
+            p["room_height"] = js["room_height"]
+            p["stage_width"] = js["stage_width"]
+            p["stage_height"] = js["stage_height"]
+            p["stage_bottom_left"] = js["stage_bottom_left"]
+            p["musicians_size"] = len(js["musicians"])
+            p["attendees_size"] = len(js["attendees"])
+
         if os.path.exists(problems_path / (str(p["id"]) + ".initial.png")):
             p["initial"] = True
             p["before_png"] = (str(p["id"]) + ".initial.png")
