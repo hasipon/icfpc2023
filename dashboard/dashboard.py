@@ -8,23 +8,26 @@ import sys
 import tempfile
 import urllib
 from collections import defaultdict
-from flask_cors import CORS
+from typing import *
 
 import flask
-from PIL import Image
-from typing import *
 from flask import Flask, request, render_template, jsonify
+from flask_cors import CORS
+from werkzeug.serving import run_simple
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from sqlalchemy import create_engine, VARCHAR, select
 from sqlalchemy import Column, Integer, String, Float, DateTime
-
 from sqlalchemy.orm import scoped_session, sessionmaker, declarative_base
+from PIL import Image
 
 visualizer_url = "http://35.221.99.118/repo/visualizer"
 static_path = pathlib.Path(__file__).resolve().parent / 'static'
 repo_path = pathlib.Path(__file__).resolve().parent.parent
 problems_path = repo_path / "problem.json"
+solutions_path = repo_path / "solutions"
 app = Flask(__name__, static_folder=str(static_path), static_url_path='')
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+app.config['APPLICATION_ROOT'] = "/dashboard"
 
 engine = create_engine('mysql+pymysql://{user}:{password}@{host}/{db}?charset=utf8'.format(**{
     'host': os.environ.get('DB_HOST', 'localhost'),
@@ -95,7 +98,7 @@ def get_solutions(problem_id: str):
             "SELECT id, problem_id, valid, cost, isl_cost, sim_cost FROM solution WHERE valid = 9 AND problem_id = %s ORDER BY updated_at",
             problem_id).all()
 
-    #with open('../result_by_api.json', 'r') as f:
+    # with open('../result_by_api.json', 'r') as f:
     #    result_by_api = json.load(f)
     result_by_api = {}
 
@@ -109,26 +112,25 @@ def get_solutions(problem_id: str):
 
 @app.route('/')
 def get_index():
+    print("hoge")
     problem_files = list([os.path.relpath(x, problems_path) for x in glob.glob(str(problems_path / "*.json"))])
     problem_files.sort(key=lambda x: int(x[:-5]))
     problems = [{"id": int(x[:-5]), "name": x} for x in problem_files]
     problems_dict = {int(x["id"]): x for x in problems}
 
     for p in problems:
-        p["best_score"] = 0
         with open(problems_path / p["name"]) as f:
-            print(p["name"])
             js = json.load(f)
-            print(p["name"], "done")
-            p["room_width"] = js["room_width"]
-            p["room_height"] = js["room_height"]
-            p["stage_width"] = js["stage_width"]
-            p["stage_height"] = js["stage_height"]
-            p["stage_bottom_left"] = js["stage_bottom_left"]
-            p["musicians_size"] = len(js["musicians"])
-            p["attendees_size"] = len(js["attendees"])
+        p["room_width"] = js["room_width"]
+        p["room_height"] = js["room_height"]
+        p["stage_width"] = js["stage_width"]
+        p["stage_height"] = js["stage_height"]
+        p["stage_bottom_left"] = js["stage_bottom_left"]
+        p["musicians_size"] = len(js["musicians"])
+        p["attendees_size"] = len(js["attendees"])
+        p["solutions"] = []
 
-        if os.path.exists(problems_path / (str(p["id"]) + ".initial.png")):
+        if os.path.exists(solutions_path / (str(p["id"]) + ".initial.png")):
             p["initial"] = True
             p["before_png"] = (str(p["id"]) + ".initial.png")
         if os.path.exists(problems_path / (str(p["id"]) + ".source.png")):
@@ -136,23 +138,43 @@ def get_index():
             p["source"] = True
             p["before_png"] = (str(p["id"]) + ".source.png")
 
-    #with open('../result_by_api.json', 'r') as f:
+    # with open('../result_by_api.json', 'r') as f:
     #    result_by_api = json.load(f)
     result_by_api = {}
 
-    #for result in result_by_api["results"]:
+    # for result in result_by_api["results"]:
     #    if result["problem_id"] in problems_dict:
     #        problem = problems_dict[result["problem_id"]]
     #        problem.update(result)
     #        problem["diff"] = problem["min_cost"] - problem["overall_best_cost"]
 
-    #solutions_rows = engine.execute(
+    # solutions_rows = engine.execute(
     #    "SELECT id, problem_id, valid, cost, isl_cost, sim_cost FROM solution WHERE valid = 1").all()
     solutions = defaultdict(lambda: [])
-    #for row in solutions_rows:
+    submission_results = list([os.path.relpath(x, solutions_path)
+                               for x in glob.glob(str(solutions_path / "*.submission.result"))])
+    for r in submission_results:
+        with open(solutions_path / r) as f:
+            js = json.load(f)
+        if "Success" in js:
+            solution = r[:-len(".submission.result")]
+            problem_id = js["Success"]["submission"]["problem_id"]
+            score = 0
+            if "Success" in js["Success"]["submission"]["score"]:
+                score = js["Success"]["submission"]["score"]["Success"]
+            solutions[problem_id].append({
+                "solution": solution,
+                "score": score,
+            })
+
+    for pid, s in solutions.items():
+        s.sort(reverse=True)
+
+
+    # for row in solutions_rows:
     #    solutions[row.problem_id].append(row)
 
-    #for k in solutions.keys():
+    # for k in solutions.keys():
     #    sl = solutions[k]
     #    solutions[k] = sorted(sl, key=lambda x: x.cost)
 
@@ -220,4 +242,12 @@ def git_pull():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, threaded=True, debug=True)
+    application = DispatcherMiddleware(Flask('dummy_app'), {
+        app.config['APPLICATION_ROOT']: app,
+    })
+    run_simple(hostname='0.0.0.0',
+               application=application,
+               port=5000,
+               threaded=True,
+               use_debugger=True,
+               use_reloader=True)
