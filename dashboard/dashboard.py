@@ -8,16 +8,17 @@ import sys
 import tempfile
 import urllib
 from collections import defaultdict
-from flask_cors import CORS
+from typing import *
 
 import flask
-from PIL import Image
-from typing import *
 from flask import Flask, request, render_template, jsonify
+from flask_cors import CORS
+from werkzeug.serving import run_simple
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from sqlalchemy import create_engine, VARCHAR, select
 from sqlalchemy import Column, Integer, String, Float, DateTime
-
 from sqlalchemy.orm import scoped_session, sessionmaker, declarative_base
+from PIL import Image
 
 visualizer_url = "http://35.221.99.118/repo/visualizer"
 static_path = pathlib.Path(__file__).resolve().parent / 'static'
@@ -26,7 +27,7 @@ problems_path = repo_path / "problem.json"
 solutions_path = repo_path / "solutions"
 app = Flask(__name__, static_folder=str(static_path), static_url_path='')
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-app.config['APPLICATION_ROOT'] = os.getenv("APP_ROOT")
+app.config['APPLICATION_ROOT'] = "/dashboard"
 
 engine = create_engine('mysql+pymysql://{user}:{password}@{host}/{db}?charset=utf8'.format(**{
     'host': os.environ.get('DB_HOST', 'localhost'),
@@ -111,6 +112,7 @@ def get_solutions(problem_id: str):
 
 @app.route('/')
 def get_index():
+    print("hoge")
     problem_files = list([os.path.relpath(x, problems_path) for x in glob.glob(str(problems_path / "*.json"))])
     problem_files.sort(key=lambda x: int(x[:-5]))
     problems = [{"id": int(x[:-5]), "name": x} for x in problem_files]
@@ -240,4 +242,12 @@ def git_pull():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, threaded=True, debug=True)
+    application = DispatcherMiddleware(Flask('dummy_app'), {
+        app.config['APPLICATION_ROOT']: app,
+    })
+    run_simple(hostname='0.0.0.0',
+               application=application,
+               port=5000,
+               threaded=True,
+               use_debugger=True,
+               use_reloader=True)
