@@ -12,5 +12,6 @@ sqlalchemy = "*"
 pymysql = "*"
 cors = "*"
 flask-cors = "*"
+drawsvg = "*"
 
 [dev-packages]

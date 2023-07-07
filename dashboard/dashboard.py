@@ -3,6 +3,7 @@ import os
 import subprocess
 import pathlib
 import shutil
+import math
 import json
 import sys
 import tempfile
@@ -10,6 +11,7 @@ import urllib
 from collections import defaultdict
 from typing import *
 
+import drawsvg as dw
 import flask
 from flask import Flask, request, render_template, jsonify
 from flask_cors import CORS
@@ -27,7 +29,6 @@ problems_path = repo_path / "problem.json"
 solutions_path = repo_path / "solutions"
 app = Flask(__name__, static_folder=str(static_path), static_url_path='')
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-app.config['APPLICATION_ROOT'] = "/dashboard"
 
 engine = create_engine('mysql+pymysql://{user}:{password}@{host}/{db}?charset=utf8'.format(**{
     'host': os.environ.get('DB_HOST', 'localhost'),
@@ -111,6 +112,23 @@ def get_solutions(problem_id: str):
     )
 
 
+def problem_svg(js, save_as=None):
+    points = []
+    for i in range(720):
+        x = 10.0 * math.cos(math.radians(360.0 / 720 * i))
+        y = 10.0 * math.sin(math.radians(360.0 / 720 * i))
+        points.append([x, y])
+    d = dw.Drawing(js["room_width"], js["room_height"], id_prefix='id',  transform='scale(1,-1)')
+    d.append(dw.Rectangle(0, 0, js["room_width"], js["room_height"], fill="white", stroke='red'))
+    d.append(dw.Rectangle(js["stage_bottom_left"][0], js["stage_bottom_left"][1],
+                          js["stage_width"], js["stage_height"], fill='#D0E0F0'))
+    for a in js["attendees"]:
+        d.append(dw.Circle(a["x"], a["y"], 2, fill="black"))
+    if save_as:
+        d.save_svg(save_as)
+    return d
+
+
 @app.route('/')
 def get_index():
     problem_files = list([os.path.relpath(x, problems_path) for x in glob.glob(str(problems_path / "*.json"))])
@@ -134,14 +152,9 @@ def get_index():
         p["musicians_size"] = len(js["musicians"])
         p["attendees_size"] = len(js["attendees"])
         p["solutions"] = []
-
-        if os.path.exists(solutions_path / (str(p["id"]) + ".initial.png")):
-            p["initial"] = True
-            p["before_png"] = (str(p["id"]) + ".initial.png")
-        if os.path.exists(problems_path / (str(p["id"]) + ".source.png")):
-            p["initial"] = True
-            p["source"] = True
-            p["before_png"] = (str(p["id"]) + ".source.png")
+        p["svg"] = str(p["id"]) + ".svg"
+        if not os.path.exists(static_path / p["svg"]):
+            problem_svg(js, static_path / p["svg"])
 
     # with open('../result_by_api.json', 'r') as f:
     #    result_by_api = json.load(f)
@@ -236,12 +249,4 @@ def git_pull():
 
 
 if __name__ == "__main__":
-    application = DispatcherMiddleware(Flask('dummy_app'), {
-        app.config['APPLICATION_ROOT']: app,
-    })
-    run_simple(hostname='0.0.0.0',
-               application=application,
-               port=5000,
-               threaded=True,
-               use_debugger=True,
-               use_reloader=True)
+    app.run('0.0.0.0', port=5000, threaded=True, debug=True)
