@@ -42,7 +42,7 @@ public:
         if(r != s.r){
             return r < s.r;
         }
-        return isBegin;
+        return !isBegin;
     }
 };
 
@@ -65,8 +65,21 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
             }
         }
     }
+
     double score = 0;
     for (auto& a : problem.attendees) {
+        cerr << "hasi" <<endl;
+        for (unsigned i = 0; i < placements.size(); i++) {
+            auto [x, y] = placements[i];
+            for (unsigned j = 0; j < placements.size(); j++) if (i != j) {
+                    auto [x2, y2] = placements[j];
+                    if (isBlocked(a.x, a.y, x, y, x2, y2)) {
+                        cerr << i << endl;
+                        goto next;
+                    }
+                }
+            next:;
+        }
         // 偏角ソート
         vector<RadianSortState > order;
         for(int i = 0; i<placements.size(); i++ ) {
@@ -75,13 +88,17 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
             double r = atan2(p.real() - a.x, p.imag() - a.y);
 
             // 客に対して、垂直方向両方にミュージシャンを10移動させて分身させた上で、偏角を求める
-            complex<double> begin_p = p + polar(10., r - M_PI / 2);
+            double tmp = r - M_PI / 2 ;
+            if(tmp < -M_PI) tmp += 2 * M_PI;
+            complex<double> begin_p = p + polar(5., tmp);
             double begin_r = atan2(begin_p.real(), begin_p.imag());
-            complex<double> end_p = p + polar(10., r + M_PI / 2);
+            tmp = r+M_PI/2;
+             if(tmp >= M_PI) tmp -= 2*M_PI;
+            complex<double> end_p = p + polar(5., tmp);
             double end_r = atan2(end_p.real(), end_p.imag());
 
             order.emplace_back( (RadianSortState) {i, true, begin_r});
-            order.emplace_back( (RadianSortState) {i, true, end_r});
+            order.emplace_back( (RadianSortState) {i, false, end_r});
         }
         // 偏角ソート
         sort(order.begin(), order.end());
@@ -90,20 +107,15 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
         set<int> blocked;
         // 距離順でactiveでありうるidを管理
         priority_queue<pair<double, int> , vector<pair<double, int>>, greater<>> activeQ;
-        // activeかどうかを厳密に管理
+        // activeかどうかを管理
         set<int > active;
 
-        for(int ii = 0; ii<order.size() * 2; ii++){
-            auto now  = order[ii % order.size()];
+        for(int oi = 0; oi<order.size() * 2; oi++){
+            auto now  = order[oi % order.size()];
             int i = now.id;
             double dx = (placements[i].first - a.x);
             double dy = (placements[i].second - a.y);
             double dist = dx *dx + dy* dy;
-            if(active.empty()){
-                active.insert(i);
-                activeQ.push(make_pair(dist, i));
-                continue;
-            }
             if(!now.isBegin){
                 if(active.find(i) == active.end()){
                     continue;
@@ -114,12 +126,17 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
                 }
                 continue;
             }
+            if(active.empty()){
+                active.insert(i);
+                activeQ.push(make_pair(dist, i));
+                continue;
+            }
             // 注目しているミュージシャンだれかよりも遠いとき、届かない
             if(dist > activeQ.top().first){
                 blocked.insert(i);
             }
             // 注目しているミュージシャンすべてよりも近い時、今一番手前のミュージシャンが届かない
-            else if(dist > activeQ.top().first){
+            else {
                 blocked.insert(activeQ.top().second);
             }
             // 注目対象に入れる
@@ -127,8 +144,10 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
             activeQ.push(make_pair(dist, i));
         }
 
+        cerr << "shiota" <<endl;
         for (unsigned i = 0; i < placements.size(); i++) {
             if(blocked.find(i) != blocked.end()){
+                cerr << i <<endl;
                 continue;
             }
             double x = placements[i].first;
@@ -136,6 +155,7 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
             auto d2 = (a.x - x) * (a.x - x) + (a.y - y) * (a.y - y);
             score += (long long)ceil(1000000 * a.tastes[problem.musicians[i]] / d2); // NOLINT(cppcoreguidelines-narrowing-conversions)
         }
+        exit(0);
     }
     return {true,score};
 }
