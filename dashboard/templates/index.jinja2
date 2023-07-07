@@ -54,12 +54,15 @@
 
                     <td class="text-center">
                         {% if 0 < solutions[p.id] | length %}
+                            {{ solutions[p.id][0].solution }}<br>
+                            {{ solutions[p.id][0].score }}
                         {% else %}
                             <p>No submission</p>
                         {% endif %}
                     </td>
                     <td class="text-center">
                         {% if 1 < solutions[p.id] | length %}
+                            <p>{{ solutions[p.id][1].score }}</p>
                         {% else %}
                             <p>No submission</p>
                         {% endif %}
