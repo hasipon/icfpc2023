@@ -102,7 +102,7 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
         }
       {
         auto d2 = (a.x - x) * (a.x - x) + (a.y - y) * (a.y - y);
-        score += (long long)ceil(1000000 * a.tastes[problem.musicians[i]] / d2); // NOLINT(cppcoreguidelines-narrowing-conversions)
+        score += (long long)ceil(1000000.0 * a.tastes[problem.musicians[i]] / d2); // NOLINT(cppcoreguidelines-narrowing-conversions)
       }
       next:;
     }
@@ -144,7 +144,7 @@ pair<bool, long long> calcScoreNth(const Problem& problem, const vector<pair<dou
         }
       {
         auto d2 = (a.x - x) * (a.x - x) + (a.y - y) * (a.y - y);
-        score += (long long)ceil(1000000 * a.tastes[problem.musicians[i]] / d2); // NOLINT(cppcoreguidelines-narrowing-conversions)
+        score += (long long)ceil(1000000.0 * a.tastes[problem.musicians[i]] / d2); // NOLINT(cppcoreguidelines-narrowing-conversions)
       }
       next:;
     }
@@ -210,11 +210,26 @@ int main(int argc, char *argv[])
   b.first += 10.0;
   b.second += 10.0;
 
+  vec<point> candidatesD3;
   for (int i = 0; i < problem.musicians.size(); ++i) {
     for (int j = 0; j < problem.musicians.size(); ++j) {
       point a;
-      a.first = b.first + (i * 10.0);
-      a.second = b.second + (j * 10.0);
+      const int H = 10.0;
+      const int W = 10.0;
+      a.first = b.first + (i * H);
+      a.second = b.second + (j * W);
+
+      for (int dir = 0; dir < 4; ++dir) {
+        for (int dd = 1; dd <= 4; ++dd) {
+          int nx = a.first + di[dir] * dd;
+          int ny = a.second + dj[dir] * dd;
+          point b(nx, ny);
+          if (is_inside(stagemn, stagemx, b)) {
+            candidatesD3.push_back(b);
+          }
+        }
+      }
+
       if (is_inside(stagemn, stagemx, a)) {
         candidates.push_back(a);
       } else {
@@ -224,8 +239,8 @@ int main(int argc, char *argv[])
     }
   }
 
-  random_device seed_gen;
-  mt19937 engine(seed_gen());
+  // random_device seed_gen;
+  // mt19937 engine(seed_gen());
   // shuffle(candidates.begin(), candidates.end(), engine);
 
   vec<point> curr;
@@ -233,6 +248,7 @@ int main(int argc, char *argv[])
     curr.push_back(candidates.back());
     candidates.pop_back();
   }
+  each (i, candidatesD3) candidates.push_back(i);
   pair<bool, lli> currScore = calcScore(problem, curr);
 
   vec<point> best = curr;
@@ -240,18 +256,29 @@ int main(int argc, char *argv[])
   assert(bestScore.first);
 
   // clog << x << endl;
-  const lli msec = 30;
+  const lli msec = 60;
   const lli saTimeStart    = get_time();            // 焼きなまし開始時刻。get_timeは、時間を返す関数( {( {
   const lli saTimeEnd      = m_startTime+msec;     // 焼きなまし終了時刻。m_startTimeはこのプログラム自体の開始時間
   lli saTimeCurrent        = saTimeStart;          // 現在の時刻
 
+  int turn = 0;
   while ((saTimeCurrent = get_time()) < saTimeEnd) {
+    if (turn % 200 == 0) {
+      currScore = calcScore(problem, curr);
+    }
+    ++turn;
     vec<point> next = curr;
     pair<bool, lli> nextScore = currScore;
     const lli diffTime = saTimeEnd - saTimeCurrent;
     const lli diffTime2 = diffTime * diffTime;
+    const int mv = max({3.0, sqrt(diffTime2), log2(diffTime2)});
+    // const int mv = max(3.0, sqrt(diffTime2));
 
-    for (int _ = (int)max({3.0, sqrt(diffTime2), log2(diffTime2)}); --_; ) {
+    if (turn % 300 == 0 && 10 < mv) {
+      currScore = calcScore(problem, curr);
+    }
+
+    for (int _ = mv; --_; ) {
       const int replaced = xorshift() % curr.size();
       const int deployed = xorshift() % candidates.size();
 
@@ -279,19 +306,23 @@ int main(int argc, char *argv[])
     const lli R = 10000;
     const bool FORCE_NEXT = R*(T-t)>T*(xorshift()%R);
 
-    cerr << currScore << "," << nextScore << "," << FORCE_NEXT << endl;
+    cerr << currScore << "," << nextScore << "," << FORCE_NEXT << "," << mv << endl;
     if (currScore < nextScore || FORCE_NEXT) {
       curr = next;
       currScore = nextScore;
     }
     if (bestScore < nextScore) {
-      best = next;
-      bestScore = nextScore;
+      // nextScore = calcScore(problem, next);
+      if (bestScore < nextScore) {
+        best = next;
+        bestScore = nextScore;
+      }
     }
   }
 
+  bestScore = calcScore(problem, best);
   show_placements(best);
-  cerr << bestScore << endl;
+  cerr << bestScore << ", " << turn << endl;
 
   return 0;
 }
