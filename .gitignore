@@ -1,0 +1,7 @@
+.DS_Store
+.clang-format
+.idea
+a.out
+node_modules
+cmake-build-debug
+cmake-build-release
