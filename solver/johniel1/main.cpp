@@ -71,7 +71,7 @@ bool isBlocked(double x0, double y0, double x1, double y1, double x2, double y2)
   return abs(p2 - (p0 + (p0 - p1) * t)) <= 5;
 }
 
-pair<bool, long long> calcScore(const Problem& problem, const vector<pair<double, double>>& placements) {
+pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, double>> placements) {
   if (placements.size() != problem.musicians.size()) {
     return {false, 0};
   }
@@ -114,7 +114,7 @@ pair<bool, long long> calcScoreNth(const Problem& problem, const vector<pair<dou
   if (placements.size() != problem.musicians.size()) {
     return {false, 0};
   }
-  unsigned i = nth;
+  const unsigned i = nth;
   {
     auto [x, y] = placements[i];
     if (!(
@@ -133,7 +133,7 @@ pair<bool, long long> calcScoreNth(const Problem& problem, const vector<pair<dou
   }
   double score = 0;
   for (auto& a : problem.attendees) {
-    unsigned i = nth;
+    const unsigned i = nth;
     {
       auto [x, y] = placements[i];
       for (unsigned j = 0; j < placements.size(); j++) if (i != j) {
@@ -249,18 +249,22 @@ int main(int argc, char *argv[])
     vec<point> next = curr;
     pair<bool, lli> nextScore = currScore;
     const lli diffTime = saTimeEnd - saTimeCurrent;
-    const lli diffTime2 = diffTime*diffTime;
+    const lli diffTime2 = diffTime * diffTime;
 
-    for (int _ = (int)max({1.0, sqrt(diffTime2), log2(diffTime2)}); --_; ) {
+    for (int _ = (int)max({3.0, sqrt(diffTime2), log2(diffTime2)}); --_; ) {
       const int replaced = xorshift() % curr.size();
       const int deployed = xorshift() % candidates.size();
 
       pair<bool, lli> r = calcScoreNth(problem, next, replaced);
-      unless (r.first) continue;
+      unless (r.first) {
+        // --_;
+        continue;
+      }
       swap(candidates[deployed], next[replaced]);
       pair<bool, lli> d = calcScoreNth(problem, next, replaced);
       unless (d.first) {
         swap(candidates[deployed], next[replaced]);
+        // --_;
         continue;
       }
       nextScore.second -= r.second;
@@ -275,7 +279,7 @@ int main(int argc, char *argv[])
     const lli R = 10000;
     const bool FORCE_NEXT = R*(T-t)>T*(xorshift()%R);
 
-    cerr << currScore << "," << nextScore << endl;
+    cerr << currScore << "," << nextScore << "," << FORCE_NEXT << endl;
     if (currScore < nextScore || FORCE_NEXT) {
       curr = next;
       currScore = nextScore;
@@ -284,7 +288,6 @@ int main(int argc, char *argv[])
       best = next;
       bestScore = nextScore;
     }
-
   }
 
   show_placements(best);
