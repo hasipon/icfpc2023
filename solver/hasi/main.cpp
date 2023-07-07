@@ -107,5 +107,11 @@ int main() {
     auto placement = solve(problem);
     auto res = calcScore(problem, placement);
     if (!res.first) throw runtime_error("invalid placement");
+    cout << "{\"placements\":[";
+    for (unsigned i = 0; i < placement.size(); i++) {
+        if (i > 0) cout << ",";
+        cout << "{\"x\":" << placement[i].first << ",\"y\":" << placement[i].second << "}";
+    }
+    cout << "]}" << endl;
     cerr << "score = " << res.second << endl;
 }
