@@ -26,6 +26,7 @@ problems_path = repo_path / "problem.json"
 solutions_path = repo_path / "solutions"
 app = Flask(__name__, static_folder=str(static_path), static_url_path='')
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+app.config['APPLICATION_ROOT'] = os.getenv("APP_ROOT")
 
 engine = create_engine('mysql+pymysql://{user}:{password}@{host}/{db}?charset=utf8'.format(**{
     'host': os.environ.get('DB_HOST', 'localhost'),
