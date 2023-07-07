@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8"/>
+	<title>visualizer</title>
+	<meta name="description" content="" />
+	<script src="./bin/js/pixi.min.js"></script>
+	<style type="text/css">
+.canvas-wrap{
+            width: 720px;
+            max-width: 100%;
+            position: relative;
+            padding: 0;
+            box-sizing: content-box;
+			height: 480px;
+            display: flex;
+}
+.canvas-wrap canvas{
+            position: absolute;
+            left:0;
+            top:0;
+            border: 0;
+            box-sizing: content-box;
+            padding: 0;
+            margin: 0;
+}
+.canvas-wrap canvas{
+	background-color:white;
+}
+</style>
+</head>
+<body bgcolor="#EEEEEE">
+<form>
+	問:
+	<input type="text" id="problem" value="1" /></input><br/>
+	<pre><code id="error" style="color:red;"></code></pre>
+	<div style="
+		flex-flow:row wrap;
+		display: flex;
+	">
+	<div class="canvas-wrap"　>
+		<canvas id="pixi" tabindex="0" width="720" height="480"></canvas></canvas><br/>
+	</div>
+			<textarea
+				id="input"
+				name="solution"
+				style="
+		margin:5px;
+		width:500px;
+		height:800px;
+		padding: 10px;
+		display: inline-block;
+	">
+	</textarea>
+
+		</form>
+	</div>
+<pre>
+</pre>
+	<script src="./bin/visualizer.js"></script>
+	</script>
+</body>
+</html>
