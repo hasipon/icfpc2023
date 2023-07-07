@@ -41,6 +41,7 @@ CORS(
     supports_credentials=True
 )
 
+problem_file_cache = {}
 
 @app.after_request
 def add_header(response):
@@ -112,15 +113,19 @@ def get_solutions(problem_id: str):
 
 @app.route('/')
 def get_index():
-    print("hoge")
     problem_files = list([os.path.relpath(x, problems_path) for x in glob.glob(str(problems_path / "*.json"))])
     problem_files.sort(key=lambda x: int(x[:-5]))
     problems = [{"id": int(x[:-5]), "name": x} for x in problem_files]
     problems_dict = {int(x["id"]): x for x in problems}
 
     for p in problems:
-        with open(problems_path / p["name"]) as f:
-            js = json.load(f)
+        global problem_file_cache
+        if p["name"] not in problem_file_cache:
+            with open(problems_path / p["name"]) as f:
+                js = json.load(f)
+            problem_file_cache[p["name"]] = js
+
+        js = problem_file_cache[p["name"]]
         p["room_width"] = js["room_width"]
         p["room_height"] = js["room_height"]
         p["stage_width"] = js["stage_width"]
@@ -214,17 +219,6 @@ def git_status():
     output = ""
     try:
         output += subprocess.check_output(["git", "status"], stderr=subprocess.STDOUT).decode('utf-8').strip()
-    except subprocess.CalledProcessError as e:
-        output += "Error:" + str(e)
-    return render_template('output.jinja2', output=output)
-
-
-@app.route('/fetch_problems')
-def fetch_problems():
-    output = ""
-    try:
-        output += subprocess.check_output(["node", "main.js"], cwd=(repo_path / 'portal')).decode("utf-8").strip()
-        shutil.copyfile(repo_path / "portal/problems.json", static_path / "problems.json")
     except subprocess.CalledProcessError as e:
         output += "Error:" + str(e)
     return render_template('output.jinja2', output=output)
