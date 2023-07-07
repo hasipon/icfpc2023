@@ -1,3 +1,4 @@
+#include <iostream>
 #include <vector>
 #include <cmath>
 #include <complex>
@@ -22,8 +23,8 @@ struct Problem {
 
 bool isBlocked(double x0, double y0, double x1, double y1, double x2, double y2) {
     complex<double> p0(x0, y0), p1(x1, y1), p2(x2, y2);
-    if (imag(conj(p1 - p0) * (p2 - p0)) < 0) return false;
-    if (imag(conj(p0 - p1) * (p2 - p1)) < 0) return false;
+    if (real(conj(p1 - p0) * (p2 - p0)) < 0) return false;
+    if (real(conj(p0 - p1) * (p2 - p1)) < 0) return false;
     double t = real(conj(p2 - p0) * (p0 - p1)) / norm(p0 - p1);
     return abs(p2 - (p0 + (p0 - p1) * t)) <= 5;
 }
@@ -35,8 +36,8 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
     for (unsigned i = 0; i < placements.size(); i++) {
         auto [x, y] = placements[i];
         if (!(
-            problem.stageBottom + 10 <= x && x <= problem.stageBottom + problem.stageHeight - 10 &&
-            problem.stageLeft + 10 <= y && y <= problem.stageLeft + problem.stageWidth - 10
+            problem.stageBottom + 10 <= y && y <= problem.stageBottom + problem.stageHeight - 10 &&
+            problem.stageLeft + 10 <= x && x <= problem.stageLeft + problem.stageWidth - 10
         )) {
             return {false, 0};
         }
@@ -67,6 +68,50 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
     return {true,score};
 }
 
-int main() {
+vector<pair<double, double>> solve(const Problem& problem) {
+    vector<pair<double, double>> res(problem.musicians.size());
+    double x = problem.stageLeft + 10;
+    double y = problem.stageBottom + 10;
+    for (auto & re : res) {
+        re = {x, y};
+        x += 10;
+        if (x > problem.stageLeft + problem.stageWidth - 10) {
+            x = problem.stageLeft + 10;
+            y += 10;
+        }
+    }
+    return res;
+}
 
+int main() {
+    Problem problem;
+    cin >> problem.roomWidth >> problem.roomHeight;
+    cin >> problem.stageWidth >> problem.stageHeight;
+    cin >> problem.stageLeft >> problem.stageBottom;
+    int musicianN, tasteN, attendeeN;
+    cin >> musicianN >> tasteN;
+    problem.musicians.resize(musicianN);
+    for (auto& m : problem.musicians) {
+        cin >> m;
+    }
+    cin >> attendeeN;
+    problem.attendees.resize(attendeeN);
+    for (auto& a : problem.attendees) {
+        cin >> a.x >> a.y;
+        a.tastes.resize(tasteN);
+        for (auto& t : a.tastes) {
+            cin >> t;
+        }
+    }
+
+    auto placement = solve(problem);
+    auto res = calcScore(problem, placement);
+    if (!res.first) throw runtime_error("invalid placement");
+    cout << "{\"placements\":[";
+    for (unsigned i = 0; i < placement.size(); i++) {
+        if (i > 0) cout << ",";
+        cout << "{\"x\":" << placement[i].first << ",\"y\":" << placement[i].second << "}";
+    }
+    cout << "]}" << endl;
+    cerr << "score = " << res.second << endl;
 }
