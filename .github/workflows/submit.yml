@@ -3,7 +3,7 @@ name: Submit
 on:
   push:
     branches: [ "main" ]
-    paths: ["solutions/**"]
+    paths: ["solutions/*.json"]
   workflow_dispatch:
 
 jobs:
