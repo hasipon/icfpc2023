@@ -1,0 +1,5 @@
+-cp src
+-main Main
+-lib pixijs:4.8.4
+-lib tweenxcore:1.1.0
+-js bin/visualizer.js

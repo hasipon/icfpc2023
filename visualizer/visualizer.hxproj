@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<project version="2">
+  <!-- Output SWF options -->
+  <output>
+    <movie outputType="CustomBuild" />
+    <movie input="" />
+    <movie path="hxml\$(TargetBuild).hxml" />
+    <movie fps="0" />
+    <movie width="0" />
+    <movie height="0" />
+    <movie version="0" />
+    <movie minorVersion="0" />
+    <movie platform="HXML MultiTarget" />
+    <movie background="#FFFFFF" />
+  </output>
+  <!-- Other classes to be compiled into your SWF -->
+  <classpaths>
+    <class path="src" />
+  </classpaths>
+  <!-- Build options -->
+  <build>
+    <option directives="" />
+    <option flashStrict="False" />
+    <option noInlineOnDebug="False" />
+    <option mainClass="Main" />
+    <option enabledebug="False" />
+    <option additional="" />
+  </build>
+  <!-- haxelib libraries -->
+  <haxelib>
+    <library name="pixijs:4.8.4" />
+    <library name="tweenxcore:1.1.0" />
+  </haxelib>
+  <!-- Class files to compile (other referenced classes will automatically be included) -->
+  <compileTargets>
+    <compile path="src\Main.hx" />
+  </compileTargets>
+  <!-- Paths to exclude from the Project Explorer tree -->
+  <hiddenPaths>
+    <hidden path="obj" />
+  </hiddenPaths>
+  <!-- Executed before build -->
+  <preBuildCommand>cmd /c haxe "$(OutputFile)" "hxml\$(BuildConfig).hxml"</preBuildCommand>
+  <!-- Executed after build -->
+  <postBuildCommand alwaysRun="False" />
+  <!-- Other project options -->
+  <options>
+    <option showHiddenPaths="False" />
+    <option testMovie="OpenDocument" />
+    <option testMovieCommand="http://localhost:2000/visualizer/index.html" />
+  </options>
+  <!-- Plugin storage -->
+  <storage />
+</project>
