@@ -131,7 +131,8 @@ class Main
 	{
 		answer = Json.parse(input.value);
 		answerGraphics.clear();
-		answerGraphics.beginFill(0xFF0000, 1);
+		answerGraphics.lineStyle(1, 0xFF0000, 0.5);
+		answerGraphics.beginFill(0xFF0000, 0.2);
 		for (p in answer.placements)
 		{
 			answerGraphics.drawCircle(

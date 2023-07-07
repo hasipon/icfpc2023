@@ -149,7 +149,8 @@ Main.onProblemGet = function(problemId,json) {
 Main.onInputChanged = function() {
 	Main.answer = JSON.parse(Main.input.value);
 	Main.answerGraphics.clear();
-	Main.answerGraphics.beginFill(16711680,1);
+	Main.answerGraphics.lineStyle(1,16711680,0.5);
+	Main.answerGraphics.beginFill(16711680,0.2);
 	var _g = 0;
 	var _g1 = Main.answer.placements;
 	while(_g < _g1.length) {
