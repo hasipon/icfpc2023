@@ -23,8 +23,8 @@ struct Problem {
 
 bool isBlocked(double x0, double y0, double x1, double y1, double x2, double y2) {
     complex<double> p0(x0, y0), p1(x1, y1), p2(x2, y2);
-    if (imag(conj(p1 - p0) * (p2 - p0)) < 0) return false;
-    if (imag(conj(p0 - p1) * (p2 - p1)) < 0) return false;
+    if (real(conj(p1 - p0) * (p2 - p0)) < 0) return false;
+    if (real(conj(p0 - p1) * (p2 - p1)) < 0) return false;
     double t = real(conj(p2 - p0) * (p0 - p1)) / norm(p0 - p1);
     return abs(p2 - (p0 + (p0 - p1) * t)) <= 5;
 }
@@ -70,7 +70,7 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
 
 vector<pair<double, double>> solve(const Problem& problem) {
     vector<pair<double, double>> res(problem.musicians.size());
-    double x = problem.stageLeft + 30;
+    double x = problem.stageLeft + 10;
     double y = problem.stageBottom + 10;
     for (auto & re : res) {
         re = {x, y};
