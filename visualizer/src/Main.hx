@@ -140,7 +140,7 @@ class Main
 				10 * scale
 			);
 		}
-		trace("draw");
+		setHash();
 	}
 	
 	private static function setHash():Void 

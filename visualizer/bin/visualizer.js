@@ -157,7 +157,7 @@ Main.onInputChanged = function() {
 		++_g;
 		Main.answerGraphics.drawCircle(p.x * Main.scale,480 - p.y * Main.scale,10 * Main.scale);
 	}
-	console.log("src/Main.hx:143:","draw");
+	Main.setHash();
 };
 Main.setHash = function() {
 	var tmp = "#" + Std.parseInt(Main.problemInput.value) + ";";
