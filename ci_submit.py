@@ -39,6 +39,7 @@ def main():
             response = submit(problem_id, contents)
             with open('{}.submission'.format(solution), mode="w") as subfile:
                 subfile.write(response.strip("\""))
+                subfile.write("\n")
 
 
 if __name__ == "__main__":
