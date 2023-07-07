@@ -14,9 +14,6 @@
             <tr>
                 <th class="text-center" scope="col">Problem</th>
                 <th class="text-center" scope="col">Image</th>
-                <th class="text-center" scope="col">Room & Stage</th>
-                <th class="text-center" scope="col">Musicians</th>
-                <th class="text-center" scope="col">Attendees</th>
                 <th class="text-center" scope="col">Solutions 1st</th>
                 <th class="text-center" scope="col">Solutions 2nd</th>
             </tr>
@@ -24,32 +21,24 @@
             {% for p in problems %}
                 <tr>
                     <td class="text-center" id="{{ p.problem_name }}">
-                        <dl>
-                            <a href="http://35.221.99.118/repo/problem.json/{{ p.id }}.json">{{ p.name }}</a>
-                            <dd> Best: {{ p.best_score }} </dd>
-                        </dl>
+                        <a href="http://35.221.99.118/repo/problem.json/{{ p.id }}.json">{{ p.name }}</a>
                         <br>
-                        <a href="/solutions/{{ p.id }}">回答一覧</a>
-                    </td>
-
-                    <td class="text-center">
-                        <a href="http://35.221.99.118/repo/problems/{{ p.id }}.png">
-                            <img src="http://35.221.99.118/repo/problems/{{ p.id }}.png">
-                        </a>
-                    </td>
-
-                    <td class="text-center">
+                        <a href="/solutions/{{ p.id }}">回答一覧</a><br>
+                        <br>
+                        <span style="font-weight: bold">Room&Stage</span><br>
                         {{ p.room_width }} x {{ p.room_height }} <br>
                         {{ p.stage_width }} x {{ p.stage_height }} <br>
-                        {{ p.stage_bottom_left }}
-                    </td>
-
-                    <td class="text-center">
-                        {{ p.musicians_size }}
-                    </td>
-
-                    <td class="text-center">
+                        {{ p.stage_bottom_left }}<br>
+                        <br>
+                        <span style="font-weight: bold">Musicians&Attendees</span><br>
+                        {{ p.musicians_size }} <br>
                         {{ p.attendees_size }}
+                    </td>
+
+                    <td class="text-center">
+                        <a href="/{{ p.svg }}">
+                            <img width="300" height="300" src="{{ p.svg }}">
+                        </a>
                     </td>
 
                     <td class="text-center">
@@ -62,7 +51,8 @@
                     </td>
                     <td class="text-center">
                         {% if 1 < solutions[p.id] | length %}
-                            <p>{{ solutions[p.id][1].score }}</p>
+                            {{ solutions[p.id][1].solution }}<br>
+                            {{ solutions[p.id][1].score }}
                         {% else %}
                             <p>No submission</p>
                         {% endif %}
