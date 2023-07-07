@@ -1,72 +1,118 @@
+
 #include <iostream>
-
-#define REP(i,b,n) for(int i=b;i<(int)n;i++)
-#define rep(i,n)   REP(i,0,n)
-#define dbg(x) cout << __LINE__ << ' ' << #x << " = " << (x) << endl
-
+#include <vector>
+#include <cmath>
+#include <complex>
 using namespace std;
 
-class Pos {
-public:
-    double x, y;
+struct Attendee {
+    double x;
+    double y;
+    vector<double> tastes;
 };
 
-typedef long long ll;
-typedef vector<double> vd;
-typedef vector<int> vi;
-
-
-const double MUSICIAN_OFFSET = 10;
-
-class Problem {
-public:
-    double roomW, roomH, stageW, stageH, stageX, stageY;
-    int musicianN, tasteN;
-    vi musicianTaste;
-    int attendeeN;
-    vector<vd> attendeeTasteWeight;
-    vector<Pos> attendeePos;
+struct Problem {
+    double roomWidth;
+    double roomHeight;
+    double stageWidth;
+    double stageHeight;
+    double stageBottom;
+    double stageLeft;
+    vector<int> musicians;
+    vector<Attendee> attendees;
 };
 
+bool isBlocked(double x0, double y0, double x1, double y1, double x2, double y2) {
+    complex<double> p0(x0, y0), p1(x1, y1), p2(x2, y2);
+    if (real(conj(p1 - p0) * (p2 - p0)) < 0) return false;
+    if (real(conj(p0 - p1) * (p2 - p1)) < 0) return false;
+    double t = real(conj(p2 - p0) * (p0 - p1)) / norm(p0 - p1);
+    return abs(p2 - (p0 + (p0 - p1) * t)) <= 5;
+}
 
-Problem input() {
-
-    Problem p;
-
-    cin >> p.roomW >> p.roomH;
-    cin >> p.stageW >> p.stageH;
-    cin >> p.stageX >> p.stageY;
-
-    cin >> p.musicianN >> p.tasteN;
-    p.musicianTaste = vi(p.musicianN);
-
-    rep(i, p.musicianN){
-        cin >> p.musicianTaste[i];
+pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, double>> placements) {
+    if (placements.size() != problem.musicians.size()) {
+        return {false, 0};
     }
-
-    cin >> p.attendeeN;
-    p.attendeeTasteWeight = vector<vd>(p.attendeeN);
-    p.attendeePos = vector<Pos>(p.attendeeN);
-
-    rep(i, p.attendeeN){
-        cin >> p.attendeePos[i].x >> p.attendeePos[i].y;
-        p.attendeeTasteWeight[i] = vd(p.tasteN);
-        rep(j, p.tasteN){
-            cin >> p.attendeeTasteWeight[i][j];
-            cout << p.attendeeTasteWeight[i][j] << ' ';
+    for (unsigned i = 0; i < placements.size(); i++) {
+        auto [x, y] = placements[i];
+        if (!(
+                    problem.stageBottom + 10 <= y && y <= problem.stageBottom + problem.stageHeight - 10 &&
+                    problem.stageLeft + 10 <= x && x <= problem.stageLeft + problem.stageWidth - 10
+                    )) {
+            return {false, 0};
+        }
+        for (unsigned j = 0; j < i; j++) {
+            auto [x2, y2] = placements[j];
+            if ((x - x2) * (x - x2) + (y - y2) * (y - y2) < 100) {
+                return {false, 0};
+            }
         }
     }
-    return p;
+    double score = 0;
+    for (auto& a : problem.attendees) {
+        for (unsigned i = 0; i < placements.size(); i++) {
+            auto [x, y] = placements[i];
+            for (unsigned j = 0; j < placements.size(); j++) if (i != j) {
+                    auto [x2, y2] = placements[j];
+                    if (isBlocked(a.x, a.y, x, y, x2, y2)) {
+                        goto next;
+                    }
+                }
+            {
+                auto d2 = (a.x - x) * (a.x - x) + (a.y - y) * (a.y - y);
+                score += (long long)ceil(1000000 * a.tastes[problem.musicians[i]] / d2); // NOLINT(cppcoreguidelines-narrowing-conversions)
+            }
+        next:;
+        }
+    }
+    return {true,score};
+}
+
+vector<pair<double, double>> solve(const Problem& problem) {
+    vector<pair<double, double>> res(problem.musicians.size());
+    double x = problem.stageLeft + 10;
+    double y = problem.stageBottom + 10;
+    for (auto & re : res) {
+        re = {x, y};
+        x += 10;
+        if (x > problem.stageLeft + problem.stageWidth - 10) {
+            x = problem.stageLeft + 10;
+            y += 10;
+        }
+    }
+    return res;
 }
 
 int main() {
+    Problem problem;
+    cin >> problem.roomWidth >> problem.roomHeight;
+    cin >> problem.stageWidth >> problem.stageHeight;
+    cin >> problem.stageLeft >> problem.stageBottom;
+    int musicianN, tasteN, attendeeN;
+    cin >> musicianN >> tasteN;
+    problem.musicians.resize(musicianN);
+    for (auto& m : problem.musicians) {
+        cin >> m;
+    }
+    cin >> attendeeN;
+    problem.attendees.resize(attendeeN);
+    for (auto& a : problem.attendees) {
+        cin >> a.x >> a.y;
+        a.tastes.resize(tasteN);
+        for (auto& t : a.tastes) {
+            cin >> t;
+        }
+    }
 
-    Problem p = input();
-    // offset
-    p.stageX += MUSICIAN_OFFSET;
-    p.stageY += MUSICIAN_OFFSET;
-    p.stageH -= MUSICIAN_OFFSET;
-    p.stageW -= MUSICIAN_OFFSET;
-
-    return 0;
+    auto placement = solve(problem);
+    auto res = calcScore(problem, placement);
+    if (!res.first) throw runtime_error("invalid placement");
+    cout << "{\"placements\":[";
+    for (unsigned i = 0; i < placement.size(); i++) {
+        if (i > 0) cout << ",";
+        cout << "{\"x\":" << placement[i].first << ",\"y\":" << placement[i].second << "}";
+    }
+    cout << "]}" << endl;
+    cerr << "score = " << res.second << endl;
 }
