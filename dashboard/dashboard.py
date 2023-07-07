@@ -119,7 +119,7 @@ def problem_svg(js, save_as=None):
         y = 10.0 * math.sin(math.radians(360.0 / 720 * i))
         points.append([x, y])
     d = dw.Drawing(js["room_width"], js["room_height"], id_prefix='id',  transform='scale(1,-1)')
-    d.append(dw.Rectangle(0, 0, js["room_width"], js["room_height"], fill="white", stroke='red'))
+    d.append(dw.Rectangle(0, 0, js["room_width"], js["room_height"], fill="silver"))
     d.append(dw.Rectangle(js["stage_bottom_left"][0], js["stage_bottom_left"][1],
                           js["stage_width"], js["stage_height"], fill='#D0E0F0'))
     for a in js["attendees"]:
