@@ -8,8 +8,9 @@ import (
 )
 
 type Attendee struct {
-	X float64 `json:"x"`
-	Y float64 `json:"y"`
+	X      float64   `json:"x"`
+	Y      float64   `json:"y"`
+	Teasts []float64 `json:"tastes"`
 }
 
 type Problem struct {
@@ -34,7 +35,11 @@ func (p *Problem) show(file *os.File) {
 	fmt.Fprintf(file, "\n")
 	fmt.Fprintf(file, "%d\n", len(p.Attendees))
 	for _, a := range p.Attendees {
-		fmt.Fprintf(file, "%f %f\n", a.X, a.Y)
+		fmt.Fprintf(file, "%f %f", a.X, a.Y)
+		for _, t := range a.Teasts {
+			fmt.Fprintf(file, " %f", t)
+		}
+		fmt.Fprintf(file, "\n")
 	}
 }
 
