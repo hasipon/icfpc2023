@@ -36,8 +36,8 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
     for (unsigned i = 0; i < placements.size(); i++) {
         auto [x, y] = placements[i];
         if (!(
-            problem.stageBottom + 10 <= x && x <= problem.stageBottom + problem.stageHeight - 10 &&
-            problem.stageLeft + 10 <= y && y <= problem.stageLeft + problem.stageWidth - 10
+            problem.stageBottom + 10 <= y && y <= problem.stageBottom + problem.stageHeight - 10 &&
+            problem.stageLeft + 10 <= x && x <= problem.stageLeft + problem.stageWidth - 10
         )) {
             return {false, 0};
         }
@@ -70,13 +70,13 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
 
 vector<pair<double, double>> solve(const Problem& problem) {
     vector<pair<double, double>> res(problem.musicians.size());
-    double x = problem.stageBottom + 10;
-    double y = problem.stageLeft + 10;
+    double x = problem.stageLeft + 30;
+    double y = problem.stageBottom + 10;
     for (auto & re : res) {
         re = {x, y};
         x += 10;
-        if (x > problem.stageBottom + problem.stageHeight - 10) {
-            x = problem.stageBottom + 10;
+        if (x > problem.stageLeft + problem.stageWidth - 10) {
+            x = problem.stageLeft + 10;
             y += 10;
         }
     }
@@ -87,7 +87,7 @@ int main() {
     Problem problem;
     cin >> problem.roomWidth >> problem.roomHeight;
     cin >> problem.stageWidth >> problem.stageHeight;
-    cin >> problem.stageBottom >> problem.stageLeft;
+    cin >> problem.stageLeft >> problem.stageBottom;
     int musicianN, tasteN, attendeeN;
     cin >> musicianN >> tasteN;
     problem.musicians.resize(musicianN);
