@@ -15,4 +15,4 @@ jobs:
       - name: ci_submit
         run: ICFPC_TOKEN=$(cat /home/ubuntu/ICFPC_TOKEN) python3 ci_submit.py
       - name: commit
-        run: git add solutions/*.submission; git commit -m "ci_submit"; git push
+        run: git add solutions/*.submission; git commit -m "ci_submit"; git push || true
