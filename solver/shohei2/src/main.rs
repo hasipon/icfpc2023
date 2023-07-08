@@ -191,8 +191,11 @@ fn eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize) -> f64 
         let dx = p.x - center.x;
         let dy = p.y - center.y;
         let d = (dx * dx + dy * dy).sqrt();
-        if d <= 5.0 { return -1000.0; }
-        let asin = (5.0 / d).asin();
+        let asin = if d <= 5.0 { 
+            std::f64::consts::PI / 2.0 
+        } else {
+            (5.0 / d).asin()
+        };
         let dir = dx.atan2(dy) - asin; 
         nodes.push(
             EvalNode {
