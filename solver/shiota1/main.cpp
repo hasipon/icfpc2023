@@ -37,8 +37,8 @@ class RadianSortState{
 public:
     int id;
     bool isBegin;
-    bool isOrig;
     double r;
+    double dist;
     bool operator<(const RadianSortState &s) const{
         if(r != s.r){
             return r < s.r;
@@ -54,9 +54,9 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
     for (unsigned i = 0; i < placements.size(); i++) {
         auto [x, y] = placements[i];
         if (!(
-            problem.stageBottom + 10 <= y && y <= problem.stageBottom + problem.stageHeight - 10 &&
-            problem.stageLeft + 10 <= x && x <= problem.stageLeft + problem.stageWidth - 10
-        )) {
+                    problem.stageBottom + 10 <= y && y <= problem.stageBottom + problem.stageHeight - 10 &&
+                    problem.stageLeft + 10 <= x && x <= problem.stageLeft + problem.stageWidth - 10
+                    )) {
             return {false, 0};
         }
         for (unsigned j = 0; j < i; j++) {
@@ -79,7 +79,7 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
                         goto next;
                     }
                 }
-            next:;
+        next:;
         }
         // 偏角ソート
         vector<RadianSortState > order;
@@ -88,48 +88,33 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
             // ミュージシャンの偏角を求める
             double r = atan2(p.real() - a.x, p.imag() - a.y);
 
-            // 客に対して、垂直方向両方にミュージシャンを5移動させて分身させた上で、偏角を求める
+            // 客に対して、垂直方向両方にミュージシャンを10移動させて分身させた上で、偏角を求める
             double tmp = r - M_PI / 2 ;
             if(tmp < -M_PI) tmp += 2 * M_PI;
-            complex<double> begin_p = p + polar(5., tmp);
+            complex<double> begin_p = p + polar(2.5, tmp) - complex<double>(a.x, a.y);
             double begin_r = atan2(begin_p.real(), begin_p.imag());
             tmp = r+M_PI/2;
-             if(tmp >= M_PI) tmp -= 2*M_PI;
-            complex<double> end_p = p + polar(5., tmp);
+            if(tmp >= M_PI) tmp -= 2*M_PI;
+            complex<double> end_p = p + polar(2.5, tmp) - complex<double>(a.x, a.y);
             double end_r = atan2(end_p.real(), end_p.imag());
 
-            order.emplace_back( (RadianSortState) {i, false, true, r});
-            order.emplace_back( (RadianSortState) {i, true, false, begin_r});
-            order.emplace_back( (RadianSortState) {i, false, false, end_r});
+            order.emplace_back( (RadianSortState) {i, true, begin_r, abs(begin_p)});
+            order.emplace_back( (RadianSortState) {i, false, end_r, abs(end_p)});
         }
         // 偏角ソート
         sort(order.begin(), order.end());
 
-        // 顧客に声が届かないミュージシャンの集合
+        // 顧客に声が届く
         set<int> blocked;
         // 距離順でactiveでありうるidを管理
-        priority_queue<pair<double, int>> activeQ;
+        priority_queue<pair<double, int> , vector<pair<double, int>>, greater<>> activeQ;
         // activeかどうかを管理
         set<int > active;
 
         for(int oi = 0; oi<order.size() * 2; oi++){
             auto now  = order[oi % order.size()];
             int i = now.id;
-            double dx = (placements[i].first - a.x);
-            double dy = (placements[i].second - a.y);
-            double dist = dx *dx + dy* dy;
-            if(now.isOrig){
-                while(!activeQ.empty()){
-                    if(activeQ.top().first < dist){
-                        break;
-                    }
-                    if(activeQ.top().second != now.id && active.find(i) != active.end()){
-                        blocked.insert(activeQ.top().second);
-                    }
-                    activeQ.pop();
-                }
-                continue;
-            }
+            double dist = now.dist;
             if(!now.isBegin){
                 if(active.find(i) == active.end()){
                     continue;
@@ -144,6 +129,14 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
                 active.insert(i);
                 activeQ.push(make_pair(dist, i));
                 continue;
+            }
+            // 注目しているミュージシャンだれかよりも遠いとき、届かない
+            if(dist > activeQ.top().first){
+                blocked.insert(i);
+            }
+            // 注目しているミュージシャンすべてよりも近い時、今一番手前のミュージシャンが届かない
+            else {
+                blocked.insert(activeQ.top().second);
             }
             // 注目対象に入れる
             active.insert(i);
@@ -161,6 +154,7 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
             auto d2 = (a.x - x) * (a.x - x) + (a.y - y) * (a.y - y);
             score += (long long)ceil(1000000 * a.tastes[problem.musicians[i]] / d2); // NOLINT(cppcoreguidelines-narrowing-conversions)
         }
+        exit(0);
     }
     return {true,score};
 }
