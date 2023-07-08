@@ -8,6 +8,7 @@ AWESOME_UA='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (
 
 
 def get_submission(submission_id: int):
+    print("get_submission", submission_id)
     assert os.getenv("ICFPC_TOKEN")
     token = os.getenv("ICFPC_TOKEN")
     request = urllib.request.Request(
@@ -30,19 +31,19 @@ def main():
     for submission in submission_not_get_result:
         with open(submission) as f:
             submission_id = f.read().strip()
-        response = get_submission(submission_id)
 
         failure = False
         success = False
         try:
-            failure = response.strip("\"")["Success"]["score"]["Failure"] is not None
-            success = response.strip("\"")["Success"]["score"]["Success"] is not None
-        except Exception:
-            pass
+            response = get_submission(submission_id).strip("\"")
+            failure = response["Success"]["submission"]["score"]["Failure"] is not None
+            success = response["Success"]["submission"]["score"]["Success"] is not None
+        except Exception as e:
+            print(e)
 
         if failure or success:
             with open('{}.result'.format(submission), mode="w") as result_file:
-                result_file.write(response.strip("\""))
+                result_file.write(response)
                 result_file.write("\n")
 
 
