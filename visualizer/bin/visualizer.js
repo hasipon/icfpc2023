@@ -156,7 +156,7 @@ Main.onInputChanged = function() {
 	while(_g < _g1.length) {
 		var p = _g1[_g];
 		++_g;
-		Main.answerGraphics.drawCircle(p.x * Main.scale,480 - p.y * Main.scale,10 * Main.scale);
+		Main.answerGraphics.drawCircle(p.x * Main.scale,480 - p.y * Main.scale,5 * Main.scale);
 	}
 	Main.setHash();
 };
