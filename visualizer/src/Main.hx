@@ -133,6 +133,7 @@ class Main
 		answerGraphics.clear();
 		answerGraphics.lineStyle(1, 0xFF0000, 0.5);
 		answerGraphics.beginFill(0xFF0000, 0.2);
+		
 		for (p in answer.placements)
 		{
 			answerGraphics.drawCircle(
