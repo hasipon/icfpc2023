@@ -20,6 +20,8 @@
 28.err:score = 114859068
 29.err:score = 221530590
 30.err:score = 407415664
+31.err:score = 98789289
+34.err:score = 24640392
 35.err:score = 35164716
 36.err:score = 30285583
 37.err:score = 71490760
