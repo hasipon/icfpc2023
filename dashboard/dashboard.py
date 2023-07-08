@@ -78,6 +78,10 @@ class Problem:
         return len(self.json["attendees"])
 
     @property
+    def tastes_size(self) -> int:
+        return len(self.json["attendees"][0]["tastes"])
+
+    @property
     def musicians(self) -> List:
         return self.json["musicians"]
 
