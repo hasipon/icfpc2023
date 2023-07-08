@@ -170,26 +170,6 @@ fn separate_placements<R:Rng>(
             }
             placements[j] = p2;
         }
-        //if p1.x < x
-        //{
-        //    p1.x = x;
-        //    hit = true;
-        //}
-        //if p1.y < y
-        //{
-        //    p1.y = y;
-        //    hit = true;
-        //}
-        //if p1.x > x + w
-        //{
-        //    p1.x = x + w;
-        //    hit = true;
-        //}
-        //if p1.y > y + h
-        //{
-        //    p1.y = y + h;
-        //    hit = true;
-        //}
         placements[i] = p1;
     }
     !hit
@@ -256,22 +236,6 @@ fn yama_placement<R:Rng>(
     {
         let mut px = center.x + offset.0 * power;
         let mut py = center.y + offset.1 * power;
-        //if px < x
-        //{
-        //    px = x - rng.gen_range(0.0..0.0000001);
-        //}
-        //if py < y
-        //{
-        //    py = y - rng.gen_range(0.0..0.0000001);
-        //}
-        //if px > x + w
-        //{
-        //    px = x + w + rng.gen_range(0.0..0.0000001);
-        //}
-        //if py > y + h
-        //{
-        //    py = y + h + rng.gen_range(0.0..0.0000001);
-        //}
         placements[index] = Point{
             x: px,
             y: py,
