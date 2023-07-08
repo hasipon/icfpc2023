@@ -3,11 +3,12 @@ import glob
 import json
 import urllib.request
 import urllib.parse
+import time
 
 AWESOME_UA='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
 
 
-def get_submission(submission_id: int):
+def get_submission(submission_id):
     print("get_submission", submission_id)
     assert os.getenv("ICFPC_TOKEN")
     token = os.getenv("ICFPC_TOKEN")
@@ -16,9 +17,9 @@ def get_submission(submission_id: int):
         headers={'Authorization': 'Bearer {}'.format(token), 'User-Agent': AWESOME_UA, 'Content-Type': 'application/json'})
     response = urllib.request.urlopen(request)
     print(response.getcode())
-    response_body = response.read()
+    response_body = response.read().decode('utf-8')
     print(response_body)
-    return response_body.decode('utf-8')
+    return response_body
 
 
 def main():
@@ -32,19 +33,19 @@ def main():
         with open(submission) as f:
             submission_id = f.read().strip()
 
-        failure = False
-        success = False
         try:
+            time.sleep(1.0)
             response = get_submission(submission_id).strip("\"")
-            failure = response["Success"]["submission"]["score"]["Failure"] is not None
-            success = response["Success"]["submission"]["score"]["Success"] is not None
+            js = json.loads(response)
+            failure = "Failure" in js["Success"]["submission"]["score"]
+            success = "Success" in js["Success"]["submission"]["score"]
+            if failure or success:
+                print(f'saving {submission}.result')
+                with open(f'{submission}.result', mode="w") as result_file:
+                    result_file.write(response)
+                    result_file.write("\n")
         except Exception as e:
             print(e)
-
-        if failure or success:
-            with open('{}.result'.format(submission), mode="w") as result_file:
-                result_file.write(response)
-                result_file.write("\n")
 
 
 if __name__ == "__main__":
