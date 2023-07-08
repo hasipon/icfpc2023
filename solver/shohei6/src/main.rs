@@ -34,8 +34,8 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     
     // 外側に配置する
     {
-        let mut dx =  0.0;
-        let mut dy: f64 = 10.0;
+        let mut dx = 0.0;
+        let mut dy: f64 = 1.0;
         let mut left = x;
         let mut right = x + w;
         let mut top = y;
@@ -43,17 +43,25 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         let mut cx = right;
         let mut cy = y;
 
-        for i in 0..problem.musicians.len()
+        let mut i = 0;
+        while i < problem.musicians.len()
         {
-            placements.push(Point{x:cx, y:cy});
-            cx += dx;
-            cy += dy;
+            let speed = if is_hit_pillars(&problem.pillars, cx, cy) {
+                placements.push(Point{x:cx, y:cy});
+                i += 1;
+                10.0
+            } else {
+                1.0
+            };
+
+            cx += dx * speed;
+            cy += dy * speed;
             if cy > bottom {
                 right -= 10.0;
                 cy = bottom;
                 cx = right;
 
-                dx = -10.0;
+                dx = -1.0;
                 dy = 0.0;
             }
             if cx < left {
@@ -61,7 +69,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
                 cx = left;
                 cy = bottom;
 
-                dy = -10.0;
+                dy = -1.0;
                 dx = 0.0;
             }
             if cy < top {
@@ -69,7 +77,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
                 cy = top;
                 cx = left;
                 
-                dx = 10.0;
+                dx = 1.0;
                 dy = 0.0;
             }
             if cx > right {
@@ -78,7 +86,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
                 cy = top;
                 
                 dx = 0.0;
-                dy = 10.0;
+                dy = 1.0;
             }
         }
     }
@@ -209,7 +217,21 @@ fn try_swap<R:Rng>(problem:&Problem, placements:&mut Vec<Point>, rng:&mut R) {
         }
     } 
 }
-
+fn is_hit_pillars(
+    pillars:&Vec<Pillar>,
+    x:f64,
+    y:f64
+) -> bool {
+    for pillar in pillars {
+        let dx = x - pillar.center.0;
+        let dy = y - pillar.center.1;
+        let r = pillar.radius;
+        if dx * dx + dy * dy < r * r {
+            return true;
+        }
+    }
+    false
+}
 fn yama_placement<R:Rng>(
     x:f64,
     y:f64,

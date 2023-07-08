@@ -9,6 +9,13 @@ pub struct Problem {
 	pub stage_bottom_left:(f64, f64),
 	pub musicians:Vec<usize>,
 	pub attendees:Vec<Attendee>,
+	pub pillars:Vec<Pillar>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Pillar {
+	pub center: (f64, f64),
+	pub radius: f64,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
