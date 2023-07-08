@@ -6,20 +6,22 @@ extern crate chrono;
 
 mod data;
 use data::*;
-use std::{fs, cmp::Ordering};
+use std::{fs, cmp::Ordering, env};
 use rand::Rng;
 use chrono::prelude::*;
 use std::collections::BinaryHeap;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let timestamp = Utc::now().timestamp();
-    for i in 0..55 {
-        solve(i + 1, timestamp)?;
-    }
+
+    let args: Vec<String> = env::args().collect();
+    let id = if args.len() <= 1 { "1" } else { &args[1] };
+    solve(id, timestamp)?;
+
     Ok(())
 }
 
-fn solve(index:u32, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
+fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let data:String = fs::read_to_string(format!("../../problem.json/{}.json", index))?; 
     let problem:Problem = serde_json::from_str(&data)?;
     let mut placements = Vec::new();
@@ -86,7 +88,7 @@ fn solve(index:u32, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let answer:Answer = Answer { placements };
     let answer_string = serde_json::to_string(&answer)?;
     fs::write(
-        format!("../../solutions/{}-shohei4-4.json", index), 
+        format!("../../solutions/{}-shohei4-5.json", index), 
         &answer_string
     )?;
     Ok(())
@@ -215,7 +217,7 @@ fn try_swap<R:Rng>(problem:&Problem, placements:&mut Vec<Point>, rng:&mut R) {
         for j in i + 1..placements.len()
         {
             let rand = rng.gen_range(0.0..1.0); 
-            if rand < rate { 
+            if true { 
                 let score1 = eval_placement(problem, placements, i) + eval_placement(problem, placements, j);
                 placements.swap(i, j);
 
