@@ -13,7 +13,7 @@ use std::collections::BinaryHeap;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let timestamp = Utc::now().timestamp();
-    for i in 2..3 {
+    for i in 11..12 {
         solve(i + 1, timestamp)?;
     }
     Ok(())
@@ -33,8 +33,8 @@ fn solve(index:u32, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     {
         placements.push(
             Point{
-                x: x + rng.gen_range(0.0..w + 0.00001), 
-                y: y + rng.gen_range(0.0..h + 0.00001)
+                x: x + w / 2.0 + rng.gen_range(-0.01..0.01), 
+                y: y + h / 2.0 + rng.gen_range(-0.01..0.01),
             }
         );
     }
@@ -48,12 +48,27 @@ fn solve(index:u32, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-    for i in 0..100
+    for i in 0..1
     {
-        let power = 30.0 / ((i as f64).powf(1.4)  + 2.0) / max_taste; 
+        let power = 0.1 * (problem.stage_width + problem.stage_height) / max_taste / problem.attendees.len() as f64 / ((1.0 + i as f64).powf(1.3)); 
+        
+        println!("{}", eval(&problem, &placements));
         pull_placements(&mut placements, &problem, power);
         separate_placements(x, y, w, h, &mut placements, &mut rng);
+        separate_placements(x, y, w, h, &mut placements, &mut rng);
+        separate_placements(x, y, w, h, &mut placements, &mut rng);
     }
+
+    for i in 0..20
+    { 
+        let power = (problem.stage_width + problem.stage_height) / 1.0 / (3.0 + i as f64).powf(1.2);
+        println!("{}", eval(&problem, &placements));
+        yama(x, y, h, w, &problem, &mut placements, power);
+        separate_placements(x, y, w, h, &mut placements, &mut rng);
+        separate_placements(x, y, w, h, &mut placements, &mut rng);
+        separate_placements(x, y, w, h, &mut placements, &mut rng);
+    }
+    
     for _ in 0..2000
     {
         if separate_placements(x, y, w, h, &mut placements, &mut rng) {
@@ -65,7 +80,7 @@ fn solve(index:u32, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let answer:Answer = Answer { placements };
     let answer_string = serde_json::to_string(&answer)?;
     fs::write(
-        format!("../../solutions/{}-shohei2-{}.json", index, timestamp), 
+        format!("../../solutions/{}-shohei2.json", index), 
         &answer_string
     )?;
     Ok(())
@@ -131,10 +146,10 @@ fn separate_placements<R:Rng>(
             let dx = p1.x - p2.x;
             let dy = p1.y - p2.y;
             let d2 = dx * dx + dy * dy;
-            if d2 < 400.0
+            if d2 < 100.0
             {
                 let d = d2.sqrt();
-                let power = (20.001 - d) * 0.8;
+                let power = (10.5 - d) * 0.5;
                 p1.x += power * (dx / d);
                 p2.x -= power * (dx / d);
                 p1.y += power * (dy / d);
@@ -143,29 +158,93 @@ fn separate_placements<R:Rng>(
             }
             placements[j] = p2;
         }
-        if p1.x < x
-        {
-            p1.x = x;
-            hit = true;
-        }
-        if p1.y < y
-        {
-            p1.y = y;
-            hit = true;
-        }
-        if p1.x > x + w
-        {
-            p1.x = x + w;
-            hit = true;
-        }
-        if p1.y > y + h
-        {
-            p1.y = y + h;
-            hit = true;
-        }
+        //if p1.x < x
+        //{
+        //    p1.x = x;
+        //    hit = true;
+        //}
+        //if p1.y < y
+        //{
+        //    p1.y = y;
+        //    hit = true;
+        //}
+        //if p1.x > x + w
+        //{
+        //    p1.x = x + w;
+        //    hit = true;
+        //}
+        //if p1.y > y + h
+        //{
+        //    p1.y = y + h;
+        //    hit = true;
+        //}
         placements[i] = p1;
     }
     !hit
+}
+
+fn yama(
+    x:f64,
+    y:f64,
+    w:f64,
+    h:f64,
+    problem:&Problem, placements:&mut Vec<Point>, power:f64) {
+    for i in 0..placements.len()
+    {
+        yama_placement(x, y, w, h, problem, placements, i, power);
+    } 
+}
+
+fn yama_placement(
+    x:f64,
+    y:f64,
+    w:f64,
+    h:f64,
+    problem:&Problem, placements:&mut Vec<Point>, index:usize, power:f64) {
+    let center = placements[index];
+    let mut result = center;
+    let mut max = eval_placement(problem, placements, index);
+    for offset in [
+        (0.0, 1.0), 
+        (0.0, -1.0), 
+        (1.0, 0.0), 
+        (-1.0, 0.0),
+        (0.7, 0.7), 
+        (0.7, -0.7), 
+        (-0.7, 0.7), 
+        (-0.7, -0.7)
+    ]
+    {
+        let mut px = center.x + offset.0 * power;
+        let mut py = center.y + offset.1 * power;
+        if px < x
+        {
+            px = x;
+        }
+        if py < y
+        {
+            py = y;
+        }
+        if px > x + w
+        {
+            px = x + w;
+        }
+        if py > y + h
+        {
+            py = y + h;
+        }
+        placements[index] = Point{
+            x: px,
+            y: py,
+        };
+        let score = eval_placement(problem, placements, index);
+        if score > max {
+            max = score;
+            result = placements[index];
+        }
+    }
+
+    placements[index] = result;
 }
 
 fn eval(problem:&Problem, placements:&Vec<Point>) -> f64 {
@@ -232,7 +311,7 @@ fn eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize) -> f64 
             node.dir += std::f64::consts::PI * 2.0;
         }
     }
-    nodes.sort_unstable_by(|a, b| (a.dir, a.d).partial_cmp(&(b.dir, b.d)).unwrap());
+    nodes.sort_unstable_by(|a, b| (a.dir, a.d).partial_cmp(&(b.dir, b.d)).unwrap_or(Ordering::Equal));
 
     let mut heap:BinaryHeap<EvalNode> = BinaryHeap::new();
     let mut result = 0.0;
