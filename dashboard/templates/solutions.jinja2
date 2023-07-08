@@ -2,9 +2,11 @@
 {% block content %}
     <div class="container-fluid">
         <h2> {{ problem_id }} ({{ solutions|length }} 件)</h2>
+    {#
         表示:
         <a href="{{ url_for("get_solutions", problem_id=problem_id) }}">デフォルト</a>
         <a href="{{ url_for("get_solutions", problem_id=problem_id, invalid=1) }}">Invalid</a>
+    #}
         <br>
 
         <table class="table">
