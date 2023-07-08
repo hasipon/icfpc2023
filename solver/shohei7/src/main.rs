@@ -19,7 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let timestamp = Utc::now().timestamp();
 
     let args: Vec<String> = env::args().collect();
-    let id = if args.len() <= 1 { "81" } else { &args[1] };
+    let id = if args.len() <= 1 { "18" } else { &args[1] };
     solve(id, timestamp)?;
 
     Ok(())
@@ -54,7 +54,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         let mut i = 0;
         while i < problem.musicians.len()
         {
-            let speed = 10.0;
+            let speed = 13.0;
             placements.push(Point{x:cx, y:cy});
             i += 1;
             
@@ -105,7 +105,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
 
     let answer:Answer = Answer { placements };
     let answer_string = serde_json::to_string(&answer)?;
-    let name = "shohei7";
+    let name = "shohei7-2";
     fs::write(
         format!("../../solutions/{}-{}.json", index, name), 
         &answer_string
