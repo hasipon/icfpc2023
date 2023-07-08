@@ -237,7 +237,7 @@ vector<pair<double, double>> solve(const Problem& problem) {
             for (unsigned jj = 0; jj < placements.size()-1; jj++) {
                 auto j = perm[jj];
                 if (blocking.count({j, k})) continue;
-                auto [x, y] = placements[j];
+                auto [x, y] = placements[jj];
                 if (isBlocked(a.x, a.y, x, y, x2, y2)) {
                     blocking.insert({j, k});
                 }
