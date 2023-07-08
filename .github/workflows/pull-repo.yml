@@ -13,3 +13,5 @@ jobs:
     steps:
       - name: Pull /home/ubuntu/repo
         run: cd /home/ubuntu/repo && git pull
+      - name: Pull /home/ubuntu/dashboard
+        run: cd /home/ubuntu/dashboard && git pull
