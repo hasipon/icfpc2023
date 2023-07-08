@@ -152,15 +152,14 @@ public:
     }
 };
 
-double evalPlacement(const Problem &p, const vector<pair<double, double>>& placements, int centerId){
+double evalPlacement(const Problem &p, const vector<pair<double, double>>& placements, double x, double y, int tasteId){
     double nearestDist = 10000000000000000000000.0;
     double nearestDir = 0.0;
-    auto center = placements[centerId];
+    auto center = make_pair(x, y);
     auto nodes = vector<HenkakuState>();
 
     // ミュージシャンのふちを追加
     for(int pid = 0; pid < placements.size(); pid++){
-        if(pid == centerId)continue;
         auto p = placements[pid];
         double dx = p.first - center.first;
         double dy = p.second - center.second;
@@ -206,7 +205,7 @@ double evalPlacement(const Problem &p, const vector<pair<double, double>>& place
         }else{
             auto a = p.attendees[node.id];
             if(heap.empty() || node.dist < heap.top().dist){
-                result += 1000000.0 * a.tastes[p.musicians[centerId]] / node.dist / node.dist;
+                result += 1000000.0 * a.tastes[tasteId] / node.dist / node.dist;
             }
         }
     }
@@ -214,17 +213,11 @@ double evalPlacement(const Problem &p, const vector<pair<double, double>>& place
 }
 
 double calcScore3(const Problem& problem, const vector<unsigned>& perm, const vector<pair<double, double>>& placements, const set<pair<unsigned, unsigned>>& blocking, int taste, double x, double y) {
+    return evalPlacement(problem, placements, x, y, taste);
+
+    /*
+
     double score = 0;
-
-    double newScore = 0;
-    int pSize = placements.size();
-    cerr << "size " << pSize <<' ' << perm.size() <<endl;
-    for(int i = 0; i<pSize; i++){
-        int centerId = perm[i];
-        newScore += evalPlacement(problem, placements, centerId);
-    }
-
-
     for (unsigned k = 0; k < problem.attendees.size(); ++ k) {
         auto& a = problem.attendees[k];
         bool blocked = false;
@@ -244,8 +237,8 @@ double calcScore3(const Problem& problem, const vector<unsigned>& perm, const ve
             score += 1000000*a.tastes[taste] / d2;
         }
     }
-    cerr << score << ' ' << newScore << endl;
     return score;
+     */
 }
 
 pair<double, double> yama(const Problem& problem, int taste, pair<int, int> start, const vector<pair<double, double>>& placements) {
@@ -325,7 +318,7 @@ vector<pair<double, double>> solve(const Problem& problem) {
         int taste = problem.musicians[i];
         auto best = yama(problem, problem.musicians[i], makeStart(problem, placements), placements);
         double bestScore = calcScore3(problem, perm, placements, blocking, taste, best.first, best.second);
-        for (int tt = 0; tt < 5; ++ tt) {
+        for (int tt = 0; tt < 20; ++ tt) {
             auto pos = yama(problem, problem.musicians[i], makeStart(problem, placements), placements);
             auto s = calcScore3(problem, perm, placements, blocking, taste, pos.first, pos.second);
             if (s > bestScore) {
