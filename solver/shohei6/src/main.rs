@@ -96,7 +96,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let answer:Answer = Answer { placements };
     let answer_string = serde_json::to_string(&answer)?;
     fs::write(
-        format!("../../solutions/{}-shohei6-1.json", index), 
+        format!("../../solutions/{}-shohei6-2.json", index), 
         &answer_string
     )?;
     Ok(())
@@ -304,6 +304,30 @@ fn eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize) -> f64 
         if problem.musicians[i] == index {
             q += 1.0 / d.max(10.0);
         }
+        let dir = dx.atan2(dy) - asin; 
+        nodes.push(
+            EvalNode {
+                dir,
+                d,
+                kind:EvalNodeKind::Start(asin * 2.0),
+            }
+        );
+        if d < nearest_d {
+            nearest_d = d;
+            nearest_dir = dir;
+        }
+    }
+    // 柱のふちを追加
+    for p in &problem.pillars
+    {
+        let dx = p.center.0 - center.x;
+        let dy = p.center.1 - center.y;
+        let d = (dx * dx + dy * dy).sqrt();
+        let asin = if d <= p.radius { 
+            std::f64::consts::PI / 2.0 
+        } else {
+            (p.radius / d).asin()
+        };
         let dir = dx.atan2(dy) - asin; 
         nodes.push(
             EvalNode {
