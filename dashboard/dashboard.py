@@ -1,4 +1,6 @@
+import csv
 import glob
+import math
 import os
 import subprocess
 import pathlib
@@ -14,6 +16,7 @@ from flask_cors import CORS
 visualizer_url = "http://35.221.99.118/repo/visualizer"
 static_path = pathlib.Path(__file__).resolve().parent / 'static'
 repo_path = pathlib.Path(__file__).resolve().parent.parent
+ideal_tsv_path = repo_path / "ideal.tsv"
 problems_path = repo_path / "problem.json"
 solutions_path = repo_path / "solutions"
 app = Flask(__name__, static_folder=str(static_path), static_url_path='')
@@ -35,6 +38,8 @@ def add_header(response):
 class Problem:
     id: int
     json: Any
+    best_score: float = 0
+    ideal_score: float = 0
 
     def __init__(self, problem_id: int):
         self.id = problem_id
@@ -84,6 +89,10 @@ class Problem:
     def svg_path(self) -> str:
         return "/" + prepare_problem_svg(self.id)
 
+    @property
+    def diff_ideal_score(self) -> float:
+        return max(0.0, self.ideal_score - self.best_score)
+
 
 @dataclass
 class Solution:
@@ -132,10 +141,7 @@ def sort_problems(problems: Dict[int, Problem], solutions: DefaultDict[int, List
     if request.args.get("sort-by"):
         key = request.args.get("sort-by")
         print(key)
-        if key == "score":
-            return dict(sorted(problems.items(), key=lambda x: solutions[x[0]][0].score, reverse=reverse))
-        else:
-            return dict(sorted(problems.items(), key=lambda x: x[1][key] if key in x[1] else x[0], reverse=reverse))
+        return dict(sorted(problems.items(), key=lambda x: getattr(x[1], key), reverse=reverse))
 
     return problems
 
@@ -208,11 +214,29 @@ def prepare_solution_svg(problem_id, solution_name):
     return svg
 
 
+def get_ideal_scores() -> Dict[int, float]:
+    ideal_scores: Dict[int, float] = dict()
+    with open(ideal_tsv_path) as f:
+        for row in csv.reader(f, delimiter="\t"):
+            if len(row) == 2:
+                ideal_scores[int(row[0])] = float(row[1])
+    return ideal_scores
+
+
 @app.route('/')
 def get_index():
     problems = list_problems()
     solutions = list_solutions()
+
+    for pid, prob_solution in solutions.items():
+        if 0 < len(prob_solution):
+            problems[pid].best_score = prob_solution[0].score
+
+    for pid, score in get_ideal_scores().items():
+        problems[pid].ideal_score = score
+
     problems = sort_problems(problems, solutions)
+
     return render_template(
         'index.jinja2',
         is_search=request.args.get("search"),

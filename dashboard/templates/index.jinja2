@@ -10,7 +10,12 @@
             <dd>{{ result_by_api.total_cost }}</dd>
         </dl>
     #}
-        表示: <a href="/">デフォルト</a> <a href="/?sort-by=score">スコア低い順</a> <a href="/?sort-by=score&desc=1">スコア高い順</a>
+        表示:
+        <a href="/">デフォルト</a>
+        <a href="/?sort-by=best_score">スコア低い順</a>
+        <a href="/?sort-by=best_score&desc=1">スコア高い順</a>
+        <a href="/?sort-by=diff_ideal_score">理論値との差低い順</a>
+        <a href="/?sort-by=diff_ideal_score&desc=1">理論値との差高い順</a>
         <br>
         <table class="table">
             <tr>
@@ -34,10 +39,15 @@
                         <br>
                         <span style="font-weight: bold">Musicians&Attendees</span><br>
                         {{ p.musicians_size }} <br>
-                        {{ p.attendees_size }}
+                        {{ p.attendees_size }} <br>
+                        <br>
+                        <span style="font-weight: bold">理論値との差</span><br>
+                        {{ "%.2E" | format(p.diff_ideal_score) }} <br>
                     </td>
 
                     <td class="text-center">
+                        <span style="font-weight: bold">理論値</span><br>
+                        {{ "%.2E" | format(p.ideal_score) }} <br>
                         <a href="{{ p.svg_path }}">
                             <img width="300" height="300" src="{{ p.svg_path }}">
                         </a>
@@ -46,7 +56,7 @@
                     <td class="text-center">
                         {% if 0 < solutions[p.id] | length %}
                             {{ solutions[p.id][0].name }}<br>
-                            {{ solutions[p.id][0].score }} <br>
+                            {{ "%.2E" | format(solutions[p.id][0].score) }} <br>
                             <a href="{{ solutions[p.id][0].svg_path }}">
                                 <img width="300" height="300" src="{{ solutions[p.id][0].svg_path }}">
                             </a>
@@ -57,7 +67,7 @@
                     <td class="text-center">
                         {% if 1 < solutions[p.id] | length %}
                             {{ solutions[p.id][1].name }}<br>
-                            {{ solutions[p.id][1].score }}<br>
+                            {{ "%.2E" | format(solutions[p.id][1].score) }} <br>
                             <a href="{{ solutions[p.id][1].svg_path }}">
                                 <img width="300" height="300" src="{{ solutions[p.id][1].svg_path }}">
                             </a>
