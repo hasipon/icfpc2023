@@ -87,7 +87,7 @@ fn solve(index:u32, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let answer:Answer = Answer { placements };
     let answer_string = serde_json::to_string(&answer)?;
     fs::write(
-        format!("../../solutions/{}-shohei5-1.json", index), 
+        format!("../../solutions/{}-shohei5-2.json", index), 
         &answer_string
     )?;
     Ok(())
