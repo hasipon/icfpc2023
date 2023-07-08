@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let timestamp = Utc::now().timestamp();
 
     let args: Vec<String> = env::args().collect();
-    let id = if args.len() <= 1 { "1" } else { &args[1] };
+    let id = if args.len() <= 1 { "56" } else { &args[1] };
     solve(id, timestamp)?;
 
     Ok(())
@@ -47,11 +47,11 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         while i < problem.musicians.len()
         {
             let speed = if is_hit_pillars(&problem.pillars, cx, cy) {
+                3.0
+            } else {
                 placements.push(Point{x:cx, y:cy});
                 i += 1;
                 10.0
-            } else {
-                1.0
             };
 
             cx += dx * speed;
