@@ -5,11 +5,15 @@ extern crate rand;
 extern crate chrono;
 
 mod data;
+mod state;
 use data::*;
+use state::*;
 use std::{fs, cmp::Ordering, env};
 use rand::Rng;
 use chrono::prelude::*;
 use std::collections::BinaryHeap;
+
+use crate::state::CacheState;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let timestamp = Utc::now().timestamp();
@@ -29,7 +33,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let y = problem.stage_bottom_left.1 + 10.0;
     let w = problem.stage_width - 20.0;
     let h = problem.stage_height - 20.0;
-    let mut max_taste = 0.0;
+    let mut cache = CacheState::new(&problem);
     let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(3);
     let iindex:i64 = index.parse()?;
     if iindex > 55 {
@@ -90,114 +94,29 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-    try_swap(&problem, &mut placements, &mut rng);
-    println!("{}:{}", index, eval(&problem, &placements));
+    
+    println!("{}:{}", index, eval(&problem, &placements, &mut cache));
+    try_swap(&problem, &mut placements, &mut rng, &mut cache);
+    try_swap(&problem, &mut placements, &mut rng, &mut cache);
+    try_swap(&problem, &mut placements, &mut rng, &mut cache);
+    let score = eval(&problem, &placements, &mut cache);
+    println!("{}:{}", index, score);
 
     let answer:Answer = Answer { placements };
     let answer_string = serde_json::to_string(&answer)?;
+    let name = "shohei7";
     fs::write(
-        format!("../../solutions/{}-shohei6-3.json", index), 
+        format!("../../solutions/{}-{}.json", index, name), 
         &answer_string
+    )?;
+    fs::write(
+        format!("../../solutions/{}-{}.myeval", index, name), 
+        &score.to_string()
     )?;
     Ok(())
 }
 
-fn pull_placements(
-    placements:&mut Vec<Point>,
-    problem:&Problem,
-    power:f64) {
-    
-    for i in 0..placements.len()
-    {
-        let mut p1 = placements[i];
-        let index = problem.musicians[i] as usize;
-        for attendee in &problem.attendees
-        {
-            let dx = p1.x - attendee.x;
-            let dy = p1.y - attendee.y;
-            let d2 = dx * dx + dy * dy;
-            let value = power * attendee.tastes[index] / d2.sqrt();
-            p1.x -= dx * value;
-            p1.y -= dy * value;
-        }
-        placements[i] = p1;
-    }
-}
-
-fn separate_placements<R:Rng>(
-    x:f64,
-    y:f64,
-    w:f64,
-    h:f64,
-    placements:&mut Vec<Point>, 
-    rng:&mut R) -> bool {
-    let mut hit = false;
-    for i in 0..placements.len()
-    {
-        let mut p1 = placements[i];
-        if p1.x < x
-        {
-            let d = p1.x - x;
-            p1.x = x + d / 10.0;
-            hit = true;
-        }
-        if p1.y < y
-        {
-            let d = p1.y - y;
-            p1.y = y + d / 10.0;
-            hit = true;
-        }
-        if p1.x > x + w
-        {
-            let d = p1.x - (x + w);
-            p1.x = x + w + d / 10.0;
-            hit = true;
-        }
-        if p1.y > y + h
-        {
-            let d = p1.y - (y + h);
-            p1.y = y + h + d / 10.0;
-            hit = true;
-        }
-        for j in (i + 1)..placements.len()
-        {
-            let mut p2 = placements[j];
-            
-            let dx = p1.x - p2.x;
-            let dy = p1.y - p2.y;
-            let d2 = dx * dx + dy * dy;
-            if d2 < 100.0
-            {
-                let d = d2.sqrt() + 0.0001;
-                let power = (10.2 - d) * 0.48;
-                p1.x += power * (dx / d);
-                p2.x -= power * (dx / d);
-                p1.y += power * (dy / d);
-                p2.y -= power * (dy / d);
-                hit = true;
-            }
-            placements[j] = p2;
-        }
-        placements[i] = p1;
-    }
-    !hit
-}
-
-fn yama<R:Rng>(
-    x:f64,
-    y:f64,
-    w:f64,
-    h:f64,
-    problem:&Problem, placements:&mut Vec<Point>, 
-    power:f64,
-    rng:&mut R) {
-    for i in 0..placements.len()
-    {
-        yama_placement(x, y, w, h, problem, placements, i, power, rng);
-    } 
-}
-
-fn try_swap<R:Rng>(problem:&Problem, placements:&mut Vec<Point>, rng:&mut R) {
+fn try_swap<R:Rng>(problem:&Problem, placements:&mut Vec<Point>, rng:&mut R, cache:&mut CacheState) {
     let rate = (500.0 / placements.len() as f64).min(1.0);
     for i in 0..placements.len()
     {
@@ -206,209 +125,152 @@ fn try_swap<R:Rng>(problem:&Problem, placements:&mut Vec<Point>, rng:&mut R) {
         {
             let rand = rng.gen_range(0.0..1.0); 
             if true { 
-                let score1 = eval_placement(problem, placements, i, false) + eval_placement(problem, placements, j, false);
+                let score1 = eval_placement(problem, placements, i, false, cache) + eval_placement(problem, placements, j, false, cache);
                 placements.swap(i, j);
+                cache.swap_placement(i, j);
 
-                let score2 = eval_placement(problem, placements, i, false) + eval_placement(problem, placements, j, false);
+                let score2 = eval_placement(problem, placements, i, false, cache) + eval_placement(problem, placements, j, false, cache);
                 if score1 > score2 {
                     placements.swap(i, j);
+                    cache.swap_placement(i, j);
                 }
             }
         }
     } 
 }
-fn yama_placement<R:Rng>(
-    x:f64,
-    y:f64,
-    w:f64,
-    h:f64,
-    problem:&Problem, 
-    placements:&mut Vec<Point>, 
-    index:usize, 
-    power:f64,
-    rng:&mut R) {
-    let center = placements[index];
-    let mut result = center;
-    let mut max = eval_placement(problem, placements, index, false);
-    for offset in [
-        (0.0, 0.9), 
-        (0.0, -0.9), 
-        (0.9, 0.0), 
-        (-0.9, 0.0),
-        (1.0 * rng.gen_range(0.0..1.0), 1.0 * rng.gen_range(0.0..1.0)), 
-        (1.0 * rng.gen_range(0.0..1.0), -1.0 * rng.gen_range(0.0..1.0)), 
-        (-1.0 * rng.gen_range(0.0..1.0), 1.0 * rng.gen_range(0.0..1.0)), 
-        (-1.0 * rng.gen_range(0.0..1.0), -1.0 * rng.gen_range(0.0..1.0))
-    ]
-    {
-        let mut px = center.x + offset.0 * power;
-        let mut py = center.y + offset.1 * power;
-        placements[index] = Point{
-            x: px,
-            y: py,
-        };
-        let score = eval_placement(problem, placements, index, false);
-        if score > max {
-            max = score;
-            result = placements[index];
-        }
-    }
 
-    placements[index] = result;
-}
-
-fn eval(problem:&Problem, placements:&Vec<Point>) -> f64 {
+fn eval(problem:&Problem, placements:&Vec<Point>, cache:&mut CacheState) -> f64 {
     let mut result = 0.0;
     for i in 0..placements.len()
     {
-        result += eval_placement(problem, placements, i, true);
+        result += eval_placement(problem, placements, i, true, cache);
     }
     result
 }
 
 // 各ミュージシャンごとの観客の評価値の合算
-fn eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, total:bool) -> f64 {
+fn eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, total:bool, cache:&mut CacheState) -> f64 {
     let mut nearest_d = 10000000000000000000000.0;
     let mut nearest_dir = 0.0;
     let center = placements[index];
-    let mut nodes = Vec::new();
-    let mut q = 1.0;
 
-    // ミュージシャンのふちを追加
-    for (i, p) in placements.iter().enumerate()
+    if cache.placement_sights[index].is_none()
     {
-        if *p == center || i == index { continue; }
-        let dx = p.x - center.x;
-        let dy = p.y - center.y;
-        let d = (dx * dx + dy * dy).sqrt();
-        let asin = if d <= 5.0 { 
-            std::f64::consts::PI / 2.0 
-        } else {
-            (5.0 / d).asin()
-        };
-        if problem.musicians[i] == problem.musicians[index] {
-            q += 1.0 / d.max(10.0);
-        }
-        let dir = dx.atan2(dy) - asin; 
-        nodes.push(
-            EvalNode {
-                dir,
-                d,
-                kind:EvalNodeKind::Start(asin * 2.0),
-            }
-        );
-        if d < nearest_d {
-            nearest_d = d;
-            nearest_dir = dir;
-        }
-    }
-    // 柱のふちを追加
-    for p in &problem.pillars
-    {
-        let dx = p.center.0 - center.x;
-        let dy = p.center.1 - center.y;
-        let d = (dx * dx + dy * dy).sqrt();
-        let asin = if d <= p.radius { 
-            std::f64::consts::PI / 2.0 
-        } else {
-            (p.radius / d).asin()
-        };
-        let dir = dx.atan2(dy) - asin; 
-        nodes.push(
-            EvalNode {
-                dir,
-                d,
-                kind:EvalNodeKind::Start(asin * 2.0),
-            }
-        );
-        if d < nearest_d {
-            nearest_d = d;
-            nearest_dir = dir;
-        }
-    }
-    // 客の中心を追加
-    for (i, a) in problem.attendees.iter().enumerate()
-    {
-        let dx = a.x - center.x;
-        let dy = a.y - center.y;
-        let d = (dx * dx + dy * dy).sqrt();
-        let dir = dx.atan2(dy); 
-        nodes.push(
-            EvalNode {
-                dir,
-                d,
-                kind:EvalNodeKind::Center(i),
-            }
-        );
-    }
-    for node in &mut nodes
-    {
-        node.dir -= nearest_dir;
-        if node.dir < 0.0
+        let mut nodes = Vec::new();
+        // ミュージシャンのふちを追加
+        for (i, p) in placements.iter().enumerate()
         {
-            node.dir += std::f64::consts::PI * 2.0;
-        }
-    }
-    nodes.sort_unstable_by(|a, b| (a.dir, a.d).partial_cmp(&(b.dir, b.d)).unwrap_or(Ordering::Equal));
-
-    let mut heap:BinaryHeap<EvalNode> = BinaryHeap::new();
-    let mut result = 0.0;
-    for node in nodes
-    {
-        let next_dir = node.dir;
-        while !heap.peek().is_none() && heap.peek().unwrap().end_dir() < next_dir
-        {
-            heap.pop();
-        }
-        match &node.kind
-        {
-            &EvalNodeKind::Start(_) => { heap.push(node); }
-            &EvalNodeKind::Center(aindex) => {
-                let a = &problem.attendees[aindex];
-                if heap.peek().is_none() || node.d < heap.peek().unwrap().d {
-                    result += 1000000.0 * a.tastes[problem.musicians[index]] / node.d / node.d;
+            if *p == center || i == index { continue; }
+            let dx = p.x - center.x;
+            let dy = p.y - center.y;
+            let d = (dx * dx + dy * dy).sqrt();
+            let asin = if d <= 5.0 { 
+                std::f64::consts::PI / 2.0 
+            } else {
+                (5.0 / d).asin()
+            };
+            let dir = dx.atan2(dy) - asin; 
+            nodes.push(
+                EvalNode {
+                    dir,
+                    d,
+                    kind:EvalNodeKind::Start(asin * 2.0),
                 }
-            },
+            );
+            if d < nearest_d {
+                nearest_d = d;
+                nearest_dir = dir;
+            }
         }
+        // 柱のふちを追加
+        for p in &problem.pillars
+        {
+            let dx = p.center.0 - center.x;
+            let dy = p.center.1 - center.y;
+            let d = (dx * dx + dy * dy).sqrt();
+            let asin = if d <= p.radius { 
+                std::f64::consts::PI / 2.0 
+            } else {
+                (p.radius / d).asin()
+            };
+            let dir = dx.atan2(dy) - asin; 
+            nodes.push(
+                EvalNode {
+                    dir,
+                    d,
+                    kind:EvalNodeKind::Start(asin * 2.0),
+                }
+            );
+            if d < nearest_d {
+                nearest_d = d;
+                nearest_dir = dir;
+            }
+        }
+        // 客の中心を追加
+        for (i, a) in problem.attendees.iter().enumerate()
+        {
+            let dx = a.x - center.x;
+            let dy = a.y - center.y;
+            let d = (dx * dx + dy * dy).sqrt();
+            let dir = dx.atan2(dy); 
+            nodes.push(
+                EvalNode {
+                    dir,
+                    d,
+                    kind:EvalNodeKind::Center(i),
+                }
+            );
+        }
+        for node in &mut nodes
+        {
+            node.dir -= nearest_dir;
+            if node.dir < 0.0
+            {
+                node.dir += std::f64::consts::PI * 2.0;
+            }
+        }
+        nodes.sort_unstable_by(|a, b| (a.dir, a.d).partial_cmp(&(b.dir, b.d)).unwrap_or(Ordering::Equal));    
+        
+        let mut heap:BinaryHeap<EvalNode> = BinaryHeap::new();
+        let mut sights = Vec::new();
+        for node in &nodes
+        {
+            let next_dir = node.dir;
+            while !heap.peek().is_none() && heap.peek().unwrap().end_dir() < next_dir
+            {
+                heap.pop();
+            }
+            match &node.kind
+            {
+                &EvalNodeKind::Start(_) => { heap.push(node.clone()); }
+                &EvalNodeKind::Center(aindex) => {
+                    if heap.peek().is_none() || node.d < heap.peek().unwrap().d {
+                        sights.push(Sight{attendee:aindex, d2: node.d * node.d });
+                    }
+                },
+            }
+        }
+        cache.placement_sights[index] = Option::Some(sights);
+    }
+
+    let mut result = 0.0;
+    for sight in cache.placement_sights[index].as_ref().unwrap() {
+        let a = &problem.attendees[sight.attendee];
+        result += 1000000.0 * a.tastes[problem.musicians[index]] / sight.d2;
     }
     if problem.extention.is_some() {
+        let mut q = 1.0;
+        for i in cache.musician_groups.get(&problem.musicians[index]).unwrap()
+        {
+            if *i == index { continue; }
+            let p = placements[*i];
+            let dx = center.x - p.x;
+            let dy = center.y - p.y;
+            let d = (dx * dx + dy * dy).sqrt();
+            q += 1.0 / d.max(10.0);
+        }
         result *= q;
     }
     result
 }
 
-#[derive(Clone, PartialEq, Debug)]
-struct EvalNode {
-    pub d:f64,
-    pub dir:f64,
-    pub kind:EvalNodeKind
-}
-impl PartialOrd for EvalNode {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        other.d.partial_cmp(&self.d)
-    }
-} 
-
-impl Ord for EvalNode {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(&other).unwrap()
-    }
-}
-impl Eq for EvalNode { }
-
-impl EvalNode {
-    pub fn end_dir(&self) ->f64
-    {
-        match &self.kind
-        {
-            &EvalNodeKind::Start(dir) => { self.dir + dir }
-            &EvalNodeKind::Center(_) => { self.dir }
-        }
-    }
-}
-
-#[derive(Clone, PartialOrd, PartialEq, Debug)]
-enum EvalNodeKind{
-    Start(f64),
-    Center(usize),
-}

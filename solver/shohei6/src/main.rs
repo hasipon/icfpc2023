@@ -372,7 +372,7 @@ fn eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, total:b
         }
     }
     if problem.extention.is_some() {
-        result *= q;
+        //result *= q;
     }
     result
 }
