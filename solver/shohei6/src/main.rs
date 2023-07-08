@@ -6,20 +6,22 @@ extern crate chrono;
 
 mod data;
 use data::*;
-use std::{fs, cmp::Ordering};
+use std::{fs, cmp::Ordering, env};
 use rand::Rng;
 use chrono::prelude::*;
 use std::collections::BinaryHeap;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let timestamp = Utc::now().timestamp();
-    for i in 0..55 {
-        solve(i + 1, timestamp)?;
-    }
+
+    let args: Vec<String> = env::args().collect();
+    let id = if args.len() <= 1 { "1" } else { &args[1] };
+    solve(id, timestamp)?;
+
     Ok(())
 }
 
-fn solve(index:u32, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
+fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let data:String = fs::read_to_string(format!("../../problem.json/{}.json", index))?; 
     let problem:Problem = serde_json::from_str(&data)?;
     let mut placements = Vec::new();
@@ -32,9 +34,8 @@ fn solve(index:u32, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     
     // 外側に配置する
     {
-        let speed =15.0;
         let mut dx =  0.0;
-        let mut dy: f64 = speed;
+        let mut dy: f64 = 10.0;
         let mut left = x;
         let mut right = x + w;
         let mut top = y;
@@ -52,7 +53,7 @@ fn solve(index:u32, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
                 cy = bottom;
                 cx = right;
 
-                dx = -speed;
+                dx = -10.0;
                 dy = 0.0;
             }
             if cx < left {
@@ -60,7 +61,7 @@ fn solve(index:u32, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
                 cx = left;
                 cy = bottom;
 
-                dy = -speed;
+                dy = -10.0;
                 dx = 0.0;
             }
             if cy < top {
@@ -68,7 +69,7 @@ fn solve(index:u32, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
                 cy = top;
                 cx = left;
                 
-                dx = speed;
+                dx = 10.0;
                 dy = 0.0;
             }
             if cx > right {
@@ -77,7 +78,7 @@ fn solve(index:u32, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
                 cy = top;
                 
                 dx = 0.0;
-                dy = speed;
+                dy = 10.0;
             }
         }
     }
@@ -87,7 +88,7 @@ fn solve(index:u32, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let answer:Answer = Answer { placements };
     let answer_string = serde_json::to_string(&answer)?;
     fs::write(
-        format!("../../solutions/{}-shohei5-3.json", index), 
+        format!("../../solutions/{}-shohei4-5.json", index), 
         &answer_string
     )?;
     Ok(())
@@ -209,14 +210,14 @@ fn yama<R:Rng>(
 }
 
 fn try_swap<R:Rng>(problem:&Problem, placements:&mut Vec<Point>, rng:&mut R) {
-    let rate = (100.0 / placements.len() as f64).min(1.0);
+    let rate = (500.0 / placements.len() as f64).min(1.0);
     for i in 0..placements.len()
     {
         println!("{}/{}", i, placements.len());
         for j in i + 1..placements.len()
         {
             let rand = rng.gen_range(0.0..1.0); 
-            if rand < rate { 
+            if true { 
                 let score1 = eval_placement(problem, placements, i) + eval_placement(problem, placements, j);
                 placements.swap(i, j);
 
