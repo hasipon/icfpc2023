@@ -3,7 +3,10 @@ import glob
 import json
 import urllib.request
 import urllib.parse
+import urllib.error
 import time
+
+import urllib3.exceptions
 
 AWESOME_UA='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
 
@@ -33,19 +36,25 @@ def main():
         with open(submission) as f:
             submission_id = f.read().strip()
 
+        time.sleep(1.0)
         try:
-            time.sleep(1.0)
             response = get_submission(submission_id).strip("\"")
-            js = json.loads(response)
-            failure = "Failure" in js["Success"]["submission"]["score"]
-            success = "Success" in js["Success"]["submission"]["score"]
-            if failure or success:
-                print(f'saving {submission}.result')
-                with open(f'{submission}.result', mode="w") as result_file:
-                    result_file.write(response)
-                    result_file.write("\n")
-        except Exception as e:
-            print(e)
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                os.remove(submission)
+                print(f"got 404. remove submission file {submission_id}")
+                continue
+            else:
+                raise
+
+        js = json.loads(response)
+        failure = "Failure" in js["Success"]["submission"]["score"]
+        success = "Success" in js["Success"]["submission"]["score"]
+        if failure or success:
+            print(f'saving {submission}.result')
+            with open(f'{submission}.result', mode="w") as result_file:
+                result_file.write(response)
+                result_file.write("\n")
 
 
 if __name__ == "__main__":
