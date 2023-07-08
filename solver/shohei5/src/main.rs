@@ -48,7 +48,7 @@ fn solve(index:u32, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
             cx += dx;
             cy += dy;
             if cy > bottom {
-                right -= speed;
+                right -= 10.0;
                 cy = bottom;
                 cx = right;
 
@@ -56,7 +56,7 @@ fn solve(index:u32, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
                 dy = 0.0;
             }
             if cx < left {
-                bottom -= speed;
+                bottom -= 10.0;
                 cx = left;
                 cy = bottom;
 
@@ -64,7 +64,7 @@ fn solve(index:u32, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
                 dx = 0.0;
             }
             if cy < top {
-                left += speed;
+                left += 10.0;
                 cy = top;
                 cx = left;
                 
@@ -72,7 +72,7 @@ fn solve(index:u32, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
                 dy = 0.0;
             }
             if cx > right {
-                top += speed;
+                top += 10.0;
                 cx = right;
                 cy = top;
                 
