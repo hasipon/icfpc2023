@@ -265,6 +265,14 @@ bool checkPlacements2(double x, double y, const vector<pair<double, double>>& pl
     return true;
 }
 
+pair<int, int> makeStart2(const Problem& problem, const vector<pair<double, double>>& placements, int idx) {
+    for (;;) {
+        double x0 = problem.stageLeft + 10 + rand() % ((int)problem.stageWidth - 19);
+        double y0 = problem.stageBottom + 10 + rand() % ((int)problem.stageHeight - 19);
+        if (checkPlacements2(x0, y0, placements, idx)) return {x0, y0};
+    }
+}
+
 int main() {
     Problem problem;
     cin >> problem.roomWidth >> problem.roomHeight;
@@ -287,77 +295,60 @@ int main() {
     }
 
     vector<pair<double, double>> placements {
-            {894,245},
-            {845,173},
-            {913,162},
-            {923,141},
+            {894,246},
+            {838,167},
+            {914,160},
+            {924,142},
             {757,252},
             {757,78},
-            {757,196},
+            {757,194},
             {939,252},
-            {757,219},
-            {872,78},
-            {854,252},
-            {773,81},
-            {943,204},
+            {757,222},
+            {876,78},
+            {860,252},
+            {774,81},
+            {943,205},
             {770,252},
             {928,252},
-            {828,78},
-            {757,180},
+            {829,78},
+            {757,178},
             {757,206},
             {952,252},
-            {880,182},
-            {878,245},
+            {881,182},
+            {884,247},
             {844,252},
-            {898,135},
-            {877,115},
-            {792,192},
-            {835,98},
+            {900,136},
+            {884,117},
+            {792,194},
+            {843,106},
             {862,78},
             {840,157},
-            {758,89},
-            {757,103},
-            {904,252},
-            {790,78},
+            {757,89},
+            {757,105},
+            {903,252},
+            {793,78},
     };
 
     auto res = calcScore(problem, placements);
     if (!res.first) throw runtime_error("invalid placement");
     cerr << "score = " << res.second << endl;
 
-    const double D = 1;
-    const double dx[4] = {+D, -D, 0, 0};
-    const double dy[4] = {0, 0, +D, -D};
-    for (int idx = 0; idx < placements.size(); ++ idx) {
-        auto [xx, yy] = placements[idx];
-        for (;;) {
-            int k = -1;
-            for (int i = 0; i < 4; ++i) {
-                double x = xx + dx[i];
-                double y = yy + dy[i];
-                if (problem.stageBottom + 10 <= y && y <= problem.stageBottom + problem.stageHeight - 10 &&
-                    problem.stageLeft + 10 <= x && x <= problem.stageLeft + problem.stageWidth - 10) {
-                    if (!checkPlacements2(x, y, placements, idx)) continue;
-                    placements[idx] = {x, y};
-                    auto res2 = calcScore(problem, placements);
-                    if (res2.first && res2.second > res.second) {
-                        res = res2;
-                        k = i;
-                        cerr << "score = " << res.second << endl;
-                    }
-                }
+    for (;;) {
+        int idx = rand() % placements.size();
+        auto prev = placements[idx];
+        placements[idx] = makeStart2(problem, placements, idx);
+        auto res2 = calcScore(problem, placements);
+        if (res2.first && res2.second > res.second) {
+            res = res2;
+            cerr << "score = " << res.second << endl;
+            cout << "{\"placements\":[";
+            for (unsigned i = 0; i < placements.size(); i++) {
+                if (i > 0) cout << ",";
+                cout << "{\"x\":" << placements[i].first << ",\"y\":" << placements[i].second << "}";
             }
-            if (k == -1) break;
-            xx += dx[k];
-            yy += dy[k];
+            cout << "]}" << endl;
+        } else {
+            placements[idx] = prev;
         }
-        placements[idx] = {xx, yy};
     }
-
-    cout << "{\"placements\":[";
-    for (unsigned i = 0; i < placements.size(); i++) {
-        if (i > 0) cout << ",";
-        cout << "{\"x\":" << placements[i].first << ",\"y\":" << placements[i].second << "}";
-    }
-    cout << "]}" << endl;
 }
