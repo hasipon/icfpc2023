@@ -44,6 +44,7 @@ CORS(
 
 problem_file_cache = {}
 
+
 @app.after_request
 def add_header(response):
     if 'Expires' in response.headers:
@@ -89,43 +90,104 @@ def sort_problems(problems):
     return problems
 
 
-@app.route('/solutions/<problem_id>')
-def get_solutions(problem_id: str):
-    if not request.args.get("invalid"):
-        solutions = engine.execute(
-            "SELECT id, problem_id, valid, cost, isl_cost, sim_cost FROM solution WHERE valid = 1 AND problem_id = %s ORDER BY cost",
-            problem_id).all()
-    else:
-        solutions = engine.execute(
-            "SELECT id, problem_id, valid, cost, isl_cost, sim_cost FROM solution WHERE valid = 9 AND problem_id = %s ORDER BY updated_at",
-            problem_id).all()
+def list_solutions():
+    solutions = defaultdict(lambda: [])
+    submission_results = list([os.path.relpath(x, solutions_path)
+                               for x in glob.glob(str(solutions_path / "*.submission.result"))])
+    for r in submission_results:
+        with open(solutions_path / r) as f:
+            js = json.load(f)
+        if "Success" in js:
+            solution_name = r[:-len(".submission.result")]
+            problem_id = int(js["Success"]["submission"]["problem_id"])
+            valid = False
+            processing = False
+            score = 0
+            if "Success" in js["Success"]["submission"]["score"]:
+                score = js["Success"]["submission"]["score"]["Success"]
+                valid = True
+            elif "Processing" in js["Success"]["submission"]["score"]:
+                processing = True
 
-    # with open('../result_by_api.json', 'r') as f:
-    #    result_by_api = json.load(f)
-    result_by_api = {}
+            svg = solution_name + ".svg"
+            if not os.path.exists(static_path / svg):
+                print(r)
+                print("A", js)
+                p_js = get_problem_json(f"{problem_id}.json")
+                print(solutions_path / solution_name)
+                try:
+                    with open(solutions_path / solution_name) as f:
+                        s_js = json.load(f)
+                        solution_svg(p_js, s_js).save_svg(static_path / svg)
+                except Exception:
+                    valid = False
+                    svg = None
 
+            solutions[problem_id].append({
+                "name": solution_name,
+                "svg": svg,
+                "score": score,
+                "valid": valid,
+                "processing": processing,
+            })
+
+    for pid, s in solutions.items():
+        s.sort(key=lambda x: x["score"], reverse=True)
+
+    return solutions
+
+
+def get_problem_json(problem_name):
+    global problem_file_cache
+    if problem_name not in problem_file_cache:
+        with open(problems_path / problem_name) as f:
+            js = json.load(f)
+        problem_file_cache[problem_name] = js
+    return problem_file_cache[problem_name]
+
+
+@app.route('/solutions/<int:problem_id>')
+def get_solutions(problem_id: int):
+    js = get_problem_json(f"{problem_id}.json")
+    # TODO: clean
+    p = {}
+    p["room_width"] = js["room_width"]
+    p["room_height"] = js["room_height"]
+    p["stage_width"] = js["stage_width"]
+    p["stage_height"] = js["stage_height"]
+    p["stage_bottom_left"] = js["stage_bottom_left"]
+    p["musicians_size"] = len(js["musicians"])
+    p["attendees_size"] = len(js["attendees"])
+    p["svg"] = f"{problem_id}.svg"
+    if not os.path.exists(static_path / p["svg"]):
+        problem_svg(js).save_svg(static_path / p["svg"])
+
+    solutions = list_solutions()[problem_id]
     return render_template(
         'solutions.jinja2',
         problem_id=problem_id,
-        problem_name="",
+        problem=p,
         solutions=solutions
     )
 
 
-def problem_svg(js, save_as=None):
-    points = []
-    for i in range(720):
-        x = 10.0 * math.cos(math.radians(360.0 / 720 * i))
-        y = 10.0 * math.sin(math.radians(360.0 / 720 * i))
-        points.append([x, y])
-    d = dw.Drawing(js["room_width"], js["room_height"], id_prefix='id',  transform='scale(1,-1)')
+def problem_svg(js):
+    d = dw.Drawing(js["room_width"], js["room_height"], id_prefix='id', transform='scale(1,-1)')
     d.append(dw.Rectangle(0, 0, js["room_width"], js["room_height"], fill="silver"))
     d.append(dw.Rectangle(js["stage_bottom_left"][0], js["stage_bottom_left"][1],
                           js["stage_width"], js["stage_height"], fill='#D0E0F0'))
     for a in js["attendees"]:
         d.append(dw.Circle(a["x"], a["y"], 2, fill="black"))
-    if save_as:
-        d.save_svg(save_as)
+    return d
+
+
+def solution_svg(p_js, s_js):
+    d = dw.Drawing(p_js["stage_width"], p_js["stage_height"], id_prefix='id', transform='scale(1,-1)')
+    d.append(dw.Rectangle(0, 0, p_js["stage_width"], p_js["stage_height"], fill='#D0E0F0'))
+    for a in s_js["placements"]:
+        d.append(dw.Circle(a["x"] - p_js["stage_bottom_left"][0],
+                           a["y"] - p_js["stage_bottom_left"][1],
+                           10, stroke="red", fill="red", fill_opacity="0.2", stroke_opacity="0.5"))
     return d
 
 
@@ -137,13 +199,7 @@ def get_index():
     problems_dict = {int(x["id"]): x for x in problems}
 
     for p in problems:
-        global problem_file_cache
-        if p["name"] not in problem_file_cache:
-            with open(problems_path / p["name"]) as f:
-                js = json.load(f)
-            problem_file_cache[p["name"]] = js
-
-        js = problem_file_cache[p["name"]]
+        js = get_problem_json(p["name"])
         p["room_width"] = js["room_width"]
         p["room_height"] = js["room_height"]
         p["stage_width"] = js["stage_width"]
@@ -151,49 +207,11 @@ def get_index():
         p["stage_bottom_left"] = js["stage_bottom_left"]
         p["musicians_size"] = len(js["musicians"])
         p["attendees_size"] = len(js["attendees"])
-        p["solutions"] = []
         p["svg"] = str(p["id"]) + ".svg"
         if not os.path.exists(static_path / p["svg"]):
-            problem_svg(js, static_path / p["svg"])
+            problem_svg(js).save_svg(static_path / p["svg"])
 
-    # with open('../result_by_api.json', 'r') as f:
-    #    result_by_api = json.load(f)
-    result_by_api = {}
-
-    # for result in result_by_api["results"]:
-    #    if result["problem_id"] in problems_dict:
-    #        problem = problems_dict[result["problem_id"]]
-    #        problem.update(result)
-    #        problem["diff"] = problem["min_cost"] - problem["overall_best_cost"]
-
-    # solutions_rows = engine.execute(
-    #    "SELECT id, problem_id, valid, cost, isl_cost, sim_cost FROM solution WHERE valid = 1").all()
-    solutions = defaultdict(lambda: [])
-    submission_results = list([os.path.relpath(x, solutions_path)
-                               for x in glob.glob(str(solutions_path / "*.submission.result"))])
-    for r in submission_results:
-        with open(solutions_path / r) as f:
-            js = json.load(f)
-        if "Success" in js:
-            solution = r[:-len(".submission.result")]
-            problem_id = js["Success"]["submission"]["problem_id"]
-            score = 0
-            if "Success" in js["Success"]["submission"]["score"]:
-                score = js["Success"]["submission"]["score"]["Success"]
-            solutions[problem_id].append({
-                "solution": solution,
-                "score": score,
-            })
-
-    for pid, s in solutions.items():
-        s.sort(key=lambda x: x["score"], reverse=True)
-
-    # for row in solutions_rows:
-    #    solutions[row.problem_id].append(row)
-
-    # for k in solutions.keys():
-    #    sl = solutions[k]
-    #    solutions[k] = sorted(sl, key=lambda x: x.cost)
+    solutions = list_solutions()
 
     sort_problems(problems)
 
@@ -202,7 +220,7 @@ def get_index():
         is_search=request.args.get("search"),
         solutions=solutions,
         problems=problems,
-        result_by_api=result_by_api,
+        result_by_api={},
         problems_dict=problems_dict
     )
 

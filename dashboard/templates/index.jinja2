@@ -36,23 +36,29 @@
                     </td>
 
                     <td class="text-center">
-                        <a href="/{{ p.svg }}">
+                        <a href="{{ p.svg }}">
                             <img width="300" height="300" src="{{ p.svg }}">
                         </a>
                     </td>
 
                     <td class="text-center">
                         {% if 0 < solutions[p.id] | length %}
-                            {{ solutions[p.id][0].solution }}<br>
-                            {{ solutions[p.id][0].score }}
+                            {{ solutions[p.id][0].name }}<br>
+                            {{ solutions[p.id][0].score }} <br>
+                            <a href="/{{ solutions[p.id][0].svg }}">
+                                <img width="300" height="300" src="/{{ solutions[p.id][0].svg }}">
+                            </a>
                         {% else %}
                             <p>No submission</p>
                         {% endif %}
                     </td>
                     <td class="text-center">
                         {% if 1 < solutions[p.id] | length %}
-                            {{ solutions[p.id][1].solution }}<br>
-                            {{ solutions[p.id][1].score }}
+                            {{ solutions[p.id][1].name }}<br>
+                            {{ solutions[p.id][1].score }}<br>
+                            <a href="/{{ solutions[p.id][1].svg }}">
+                                <img width="300" height="300" src="/{{ solutions[p.id][1].svg }}">
+                            </a>
                         {% else %}
                             <p>No submission</p>
                         {% endif %}
