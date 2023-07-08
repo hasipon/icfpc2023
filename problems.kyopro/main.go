@@ -13,6 +13,11 @@ type Attendee struct {
 	Teasts []float64 `json:"tastes"`
 }
 
+type Pillar struct {
+	Center []float64 `json:"center"`
+	Radius float64   `json:"radius"`
+}
+
 type Problem struct {
 	RoomWidth       float64     `json:"room_width"`
 	RoomHeight      float64     `json:"room_height"`
@@ -21,6 +26,7 @@ type Problem struct {
 	StageBottomLeft []float64   `json:"stage_bottom_left"`
 	Musicians       []int       `json:"musicians"`
 	Attendees       []*Attendee `json:"attendees"`
+	Pillars         []*Pillar   `json:"pillars"`
 }
 
 // func (p *Problem) Stringer() string {}
@@ -46,10 +52,14 @@ func (p *Problem) show(file *os.File) {
 		}
 		fmt.Fprintf(file, "\n")
 	}
+	fmt.Fprintf(file, "%d\n", len(p.Pillars))
+	for _, a := range p.Pillars {
+		fmt.Fprintf(file, "%f %f %f\n", a.Center[0], a.Center[1], a.Radius)
+	}
 }
 
 func main() {
-	for i := 56; i <= 90; i++ {
+	for i := 1; i <= 90; i++ {
 		fmt.Println(i)
 		initJson, err := os.ReadFile(fmt.Sprintf("../problem.json/%d.json", i))
 		if err != nil {

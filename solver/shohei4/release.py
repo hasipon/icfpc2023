@@ -1,2 +1,4 @@
-print('abcde')
-subprocess.run(["./target/release/solver.exe", "1"])
+import subprocess
+
+for n in range(0, 55):
+    subprocess.Popen(["./target/release/solver.exe", str(n)])
