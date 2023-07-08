@@ -19,7 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let timestamp = Utc::now().timestamp();
 
     let args: Vec<String> = env::args().collect();
-    let id = if args.len() <= 1 { "18" } else { &args[1] };
+    let id = if args.len() <= 1 { "81" } else { &args[1] };
     solve(id, timestamp)?;
 
     Ok(())
@@ -95,17 +95,18 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     
-    println!("{}:{}", index, eval(&problem, &placements, &mut cache));
-    try_swap(&problem, &mut placements, &mut rng, &mut cache);
-    try_swap(&problem, &mut placements, &mut rng, &mut cache);
-    try_swap(&problem, &mut placements, &mut rng, &mut cache);
-    try_swap(&problem, &mut placements, &mut rng, &mut cache);
+    for i in 0..4
+    {
+        println!("{}: {}:{}", index, i, eval(&problem, &placements, &mut cache));
+        try_swap(&problem, &mut placements, &mut rng, &mut cache);
+    }
+
     let score = eval(&problem, &placements, &mut cache);
     println!("{}:{}", index, score);
 
     let answer:Answer = Answer { placements };
     let answer_string = serde_json::to_string(&answer)?;
-    let name = "shohei7-4";
+    let name = "shohei7-5";
     fs::write(
         format!("../../solutions/{}-{}.json", index, name), 
         &answer_string
@@ -118,22 +119,24 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn try_swap<R:Rng>(problem:&Problem, placements:&mut Vec<Point>, rng:&mut R, cache:&mut CacheState) {
-    let rate = (500.0 / placements.len() as f64).min(1.0);
     for i in 0..placements.len()
     {
-        println!("{}/{}", i, placements.len());
         for j in i + 1..placements.len()
         {
-            let rand = rng.gen_range(0.0..1.0); 
             if true { 
                 let score1 = eval_placement(problem, placements, i, false, cache) + eval_placement(problem, placements, j, false, cache);
+                let scorei = cache.placement_score[i];
+                let scorej = cache.placement_score[j];
+
                 placements.swap(i, j);
                 cache.swap_placement(i, j);
-
+                
                 let score2 = eval_placement(problem, placements, i, false, cache) + eval_placement(problem, placements, j, false, cache);
                 if score1 > score2 {
                     placements.swap(i, j);
                     cache.swap_placement(i, j);
+                    cache.placement_score[i] = scorei;
+                    cache.placement_score[j] = scorej;
                 }
             }
         }
@@ -259,8 +262,11 @@ fn eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, total:b
         let a = &problem.attendees[sight.attendee];
         result += 1000000.0 * a.tastes[problem.musicians[index]] / sight.d2;
     }
+    cache.placement_score[index] = result;
+
     if problem.extention.is_some() {
         let mut q = 1.0;
+        let mut bonus = 0.0;
         for i in cache.musician_groups.get(&problem.musicians[index]).unwrap()
         {
             if *i == index { continue; }
@@ -268,9 +274,16 @@ fn eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, total:b
             let dx = center.x - p.x;
             let dy = center.y - p.y;
             let d = (dx * dx + dy * dy).sqrt();
-            q += 1.0 / d.max(10.0);
+            let value = 1.0 / d.max(10.0);
+            q += value;
+            bonus += value * cache.placement_score[*i];
         }
         result *= q;
+        
+        if !total
+        {
+            result += bonus;
+        }
     }
     result
 }
