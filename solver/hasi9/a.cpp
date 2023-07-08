@@ -179,7 +179,6 @@ int main(int argc, char** argv) {
             }
         }
     }
-    /*
     for (int x = (int)problem.stageLeft + 10; x <= problem.stageLeft + problem.stageWidth - 10; x += 1) {
         for (int y = (int)problem.stageBottom + 10; y <= problem.stageBottom + problem.stageHeight - 10; y += 1) {
             if (!checkPlacements(x, y, placements)) continue;
@@ -194,7 +193,6 @@ int main(int argc, char** argv) {
             next:;
         }
     }
-     */
     map<int, int> tasteCount;
     for (auto taste : problem.musicians) {
         tasteCount[taste]++;
