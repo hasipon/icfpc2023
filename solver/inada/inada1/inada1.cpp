@@ -132,6 +132,70 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
     return { true,score };
 }
 
+// 外周に沿った placement を返却する
+vector<pair<double, double>> makeEdgePlacement(const Problem& problem) {
+    const auto x = problem.stageLeft + 10.0;
+    const auto y = problem.stageBottom + 10.0;
+    const auto w = problem.stageWidth - 20.0;
+    const auto h = problem.stageHeight - 20.0;
+
+    const auto speed = 15.0;
+    auto dx = 0.0;
+    auto dy = speed;
+    auto left = x;
+    auto right = x + w;
+    auto top = y;
+    auto bottom = y + h;
+    auto cx = right;
+    auto cy = y;
+
+    vector<pair<double, double>> placements;
+    for (int i = 0; i < problem.musicians.size(); i++) {
+        placements.emplace_back(cx, cy);
+        cx += dx;
+        cy += dy;
+
+
+        if (cy > bottom) {
+            right -= 10.0;
+            cy = bottom;
+            cx = right;
+
+            dx = -speed;
+            dy = 0.0;
+        }
+
+        if (cx < left) {
+            bottom -= 10.0;
+            cx = left;
+            cy = bottom;
+
+            dy = -speed;
+            dx = 0.0;
+        }
+
+        if (cy < top) {
+            left += 10.0;
+            cy = top;
+            cx = left;
+
+            dx = speed;
+            dy = 0.0;
+        }
+
+        if (cx > right) {
+            top += 10.0;
+            cx = right;
+            cy = top;
+
+            dx = 0.0;
+            dy = speed;
+        }
+    }
+
+    return placements;
+}
+
 // 1つのTastesとAttendeesのみを考慮した簡易スコア計算
 double calcScore2(const Problem& problem, int taste, double x, double y) {
     double score = 0;
@@ -193,11 +257,15 @@ pair<int, int> makeStart(const Problem& problem, const vector<pair<double, doubl
 }
 
 vector<pair<double, double>> solve(const Problem& problem) {
+    /*
 	vector<pair<double, double> > placements;
     while (placements.size() < problem.musicians.size()) {
         placements.emplace_back(makeStart(problem, placements));
     }
     return placements;
+    */
+
+    return makeEdgePlacement(problem);
 }
 
 void readProblem(std::istream& is, Problem& problem) {
