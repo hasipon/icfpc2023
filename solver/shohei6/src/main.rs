@@ -46,14 +46,10 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         let mut i = 0;
         while i < problem.musicians.len()
         {
-            let speed = if is_hit_pillars(&problem.pillars, cx, cy) {
-                3.0
-            } else {
-                placements.push(Point{x:cx, y:cy});
-                i += 1;
-                10.0
-            };
-
+            let speed = 10.0;
+            placements.push(Point{x:cx, y:cy});
+            i += 1;
+            
             cx += dx * speed;
             cy += dy * speed;
             if cy > bottom {
@@ -216,21 +212,6 @@ fn try_swap<R:Rng>(problem:&Problem, placements:&mut Vec<Point>, rng:&mut R) {
             }
         }
     } 
-}
-fn is_hit_pillars(
-    pillars:&Vec<Pillar>,
-    x:f64,
-    y:f64
-) -> bool {
-    for pillar in pillars {
-        let dx = x - pillar.center.0;
-        let dy = y - pillar.center.1;
-        let r = pillar.radius;
-        if dx * dx + dy * dy < r * r {
-            return true;
-        }
-    }
-    false
 }
 fn yama_placement<R:Rng>(
     x:f64,
