@@ -6,7 +6,11 @@
 7.err:score = 77738385
 8.err:score = 1572362655
 9.err:score = 62867963
+11.err:score = 174227632
+12.err:score = 907766995
 15.err:score = 11052348
+17.err:score = 215104
+21.err:score = 29252
 22.err:score = 40342516
 23.err:score = 31293436
 24.err:score = 46544696
@@ -15,7 +19,11 @@
 27.err:score = 101521891
 28.err:score = 114859068
 29.err:score = 221530590
+30.err:score = 407415664
+35.err:score = 35164716
 36.err:score = 30285583
+37.err:score = 71490760
+38.err:score = 6065654
 39.err:score = 22288171
 40.err:score = 30570215
 41.err:score = 11883602
