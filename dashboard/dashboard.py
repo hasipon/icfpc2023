@@ -78,6 +78,10 @@ class Problem:
         return len(self.json["attendees"])
 
     @property
+    def pillars_size(self) -> float:
+        return len(self.json["pillars"])
+
+    @property
     def tastes_size(self) -> int:
         return len(self.json["attendees"][0]["tastes"])
 
@@ -182,6 +186,8 @@ def gen_problem_svg(js):
     d.append(dw.Rectangle(0, 0, js["room_width"], js["room_height"], fill="silver"))
     d.append(dw.Rectangle(js["stage_bottom_left"][0], js["stage_bottom_left"][1],
                           js["stage_width"], js["stage_height"], fill='#D0E0F0'))
+    for p in js["pillars"]:
+        d.append(dw.Circle(p["center"][0], p["center"][1], p["radius"], fill="maroon"))
     for a in js["attendees"]:
         d.append(dw.Circle(a["x"], a["y"], 2, fill="black"))
     return d
