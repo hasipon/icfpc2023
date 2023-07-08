@@ -99,6 +99,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     try_swap(&problem, &mut placements, &mut rng, &mut cache);
     try_swap(&problem, &mut placements, &mut rng, &mut cache);
     try_swap(&problem, &mut placements, &mut rng, &mut cache);
+    try_swap(&problem, &mut placements, &mut rng, &mut cache);
     let score = eval(&problem, &placements, &mut cache);
     println!("{}:{}", index, score);
 
