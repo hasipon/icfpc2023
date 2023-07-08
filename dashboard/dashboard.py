@@ -86,7 +86,7 @@ class Problem:
 
 
 @dataclass
-class Submission:
+class Solution:
     name: str  # 1-sample.json
     problem_id: int
     submission_id: str
@@ -95,15 +95,15 @@ class Submission:
     valid: bool = False
     processing: bool = False
 
-    def __init__(self, file_path: str):
-        file_name = os.path.basename(file_path)
+    def __init__(self, result_file_path: str):
+        file_name = os.path.basename(result_file_path)
         self.name = file_name[:-len(".submission.result")]
         self.problem_id = int(file_name.split("-", 1)[0])
 
         with open(solutions_path / self.name) as f:
             self.solution_json = json.load(f)
 
-        with open(file_path) as f:
+        with open(result_file_path) as f:
             js = json.load(f)
 
         if "Success" not in js:
@@ -124,23 +124,28 @@ class Submission:
         return self.solution_json["placements"]
 
 
-def sort_problems(problems):
+def sort_problems(problems: Dict[int, Problem], solutions: DefaultDict[int, List[Solution]]):
     reverse = False
     if request.args.get("desc"):
         reverse = True
 
     if request.args.get("sort-by"):
         key = request.args.get("sort-by")
-        problems.sort(key=lambda x: x[key] if key in x else x["id"], reverse=reverse)
+        print(key)
+        if key == "score":
+            return dict(sorted(problems.items(), key=lambda x: solutions[x[0]][0].score, reverse=reverse))
+        else:
+            return dict(sorted(problems.items(), key=lambda x: x[1][key] if key in x[1] else x[0], reverse=reverse))
+
     return problems
 
 
-def list_solutions() -> DefaultDict[int, List[Submission]]:
-    solutions: DefaultDict[int, List[Submission]] = defaultdict(lambda: [])
+def list_solutions() -> DefaultDict[int, List[Solution]]:
+    solutions: DefaultDict[int, List[Solution]] = defaultdict(lambda: [])
 
     for r in glob.glob(str(solutions_path / "*.submission.result")):
-        submission = Submission(r)
-        solutions[submission.problem_id].append(Submission(r))
+        submission = Solution(r)
+        solutions[submission.problem_id].append(Solution(r))
 
     for s in solutions.values():
         s.sort(key=lambda x: x.score, reverse=True)
@@ -207,6 +212,7 @@ def prepare_solution_svg(problem_id, solution_name):
 def get_index():
     problems = list_problems()
     solutions = list_solutions()
+    problems = sort_problems(problems, solutions)
     return render_template(
         'index.jinja2',
         is_search=request.args.get("search"),
