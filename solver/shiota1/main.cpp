@@ -104,7 +104,7 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
         // 偏角ソート
         sort(order.begin(), order.end());
 
-        // 顧客に声が届く
+        // 顧客に声が届かない
         set<int> blocked;
         // 距離順でactiveでありうるidを管理
         priority_queue<pair<double, int> , vector<pair<double, int>>, greater<>> activeQ;
