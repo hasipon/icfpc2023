@@ -36,8 +36,8 @@ def main():
         success = False
         try:
             response = get_submission(submission_id).strip("\"")
-            failure = response["Success"]["score"]["Failure"] is not None
-            success = response["Success"]["score"]["Success"] is not None
+            failure = response["Success"]["submission"]["score"]["Failure"] is not None
+            success = response["Success"]["submission"]["score"]["Success"] is not None
         except Exception as e:
             print(e)
 
