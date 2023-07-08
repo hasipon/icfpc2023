@@ -1,9 +1,8 @@
 name: GetSubmit
 
 on:
-  push:
-    branches: [ "main" ]
-    paths: ["solutions/*.json.submission"]
+  schedule:
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 jobs:
