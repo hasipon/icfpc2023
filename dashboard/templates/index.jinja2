@@ -2,16 +2,15 @@
 {% block content %}
     <div class="container-fluid">
         <h2>問題一覧 ({{ problems|length }} 件)</h2>
+    {#
         <dl>
             <dt>Solved</dt>
             <dd>{{ result_by_api.solved_problem_count }} / {{ problems|length }}</dd>
             <dt>TotalCost</dt>
             <dd>{{ result_by_api.total_cost }}</dd>
         </dl>
-    {#
-        表示: <a href="/">デフォルト</a> <a href="/?sort-by=min_cost&desc=1">コスト高い順</a> <a href="/?sort-by=diff&desc=1">トップとの差が大きい順</a>
-     #}
-        <br/>
+    #}
+        <br>
         <table class="table">
             <tr>
                 <th class="text-center" scope="col">Problem</th>
@@ -20,12 +19,12 @@
                 <th class="text-center" scope="col">Solutions 2nd</th>
             </tr>
 
-            {% for p in problems %}
+            {% for p in problems.values() %}
                 <tr>
-                    <td class="text-center" id="{{ p.problem_name }}">
+                    <td class="text-center" id="{{ p.id }}">
                         <a href="http://35.221.99.118/repo/problem.json/{{ p.id }}.json">{{ p.name }}</a>
                         <br>
-                        <a href="/solutions/{{ p.id }}">回答一覧</a><br>
+                        <a href="/solutions/{{ p.id }}">回答一覧 ({{solutions[p.id] | length }} 件)</a><br>
                         <br>
                         <span style="font-weight: bold">Room&Stage</span><br>
                         {{ p.room_width }} x {{ p.room_height }} <br>
@@ -38,8 +37,8 @@
                     </td>
 
                     <td class="text-center">
-                        <a href="{{ p.svg }}">
-                            <img width="300" height="300" src="{{ p.svg }}">
+                        <a href="{{ p.svg_path }}">
+                            <img width="300" height="300" src="{{ p.svg_path }}">
                         </a>
                     </td>
 
@@ -47,8 +46,8 @@
                         {% if 0 < solutions[p.id] | length %}
                             {{ solutions[p.id][0].name }}<br>
                             {{ solutions[p.id][0].score }} <br>
-                            <a href="/{{ solutions[p.id][0].svg }}">
-                                <img width="300" height="300" src="/{{ solutions[p.id][0].svg }}">
+                            <a href="{{ solutions[p.id][0].svg_path }}">
+                                <img width="300" height="300" src="{{ solutions[p.id][0].svg_path }}">
                             </a>
                         {% else %}
                             <p>No submission</p>
@@ -58,8 +57,8 @@
                         {% if 1 < solutions[p.id] | length %}
                             {{ solutions[p.id][1].name }}<br>
                             {{ solutions[p.id][1].score }}<br>
-                            <a href="/{{ solutions[p.id][1].svg }}">
-                                <img width="300" height="300" src="/{{ solutions[p.id][1].svg }}">
+                            <a href="{{ solutions[p.id][1].svg_path }}">
+                                <img width="300" height="300" src="{{ solutions[p.id][1].svg_path }}">
                             </a>
                         {% else %}
                             <p>No submission</p>
