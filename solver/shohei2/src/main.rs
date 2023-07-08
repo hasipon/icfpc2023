@@ -177,6 +177,7 @@ fn eval(problem:&Problem, placements:&Vec<Point>) -> f64 {
     result
 }
 
+// 各ミュージシャンごとの観客の評価値の合算
 fn eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize) -> f64 {
     let mut nearest_d = 10000000000000000000000.0;
     let mut nearest_dir = 0.0;
