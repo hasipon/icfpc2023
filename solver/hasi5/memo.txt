@@ -11,6 +11,7 @@
 12.err:score = 907766995
 15.err:score = 11052348
 17.err:score = 215104
+18.err:score = 917696
 21.err:score = 29252
 22.err:score = 40342516
 23.err:score = 31293436
@@ -22,6 +23,8 @@
 29.err:score = 221530590
 30.err:score = 407415664
 31.err:score = 98789289
+32.err:score = 143891711
+33.err:score = 14969883
 34.err:score = 24640392
 35.err:score = 35164716
 36.err:score = 30285583

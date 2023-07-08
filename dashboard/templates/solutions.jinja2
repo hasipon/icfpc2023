@@ -1,14 +1,7 @@
 {% extends "base.jinja2" %}
 {% block content %}
     <div class="container-fluid">
-        <h2> {{ problem_id }} ({{ solutions|length }} 件)</h2>
-    {#
-        表示:
-        <a href="{{ url_for("get_solutions", problem_id=problem_id) }}">デフォルト</a>
-        <a href="{{ url_for("get_solutions", problem_id=problem_id, invalid=1) }}">Invalid</a>
-    #}
-        <br>
-
+        <h2> #{{ problem.id }} ({{ solutions|length }} 件)</h2>
         <table class="table">
             {% for s in solutions %}
                 {% if loop.index0 % 4 == 0 -%}
@@ -16,8 +9,8 @@
                 {% endif -%}
 
             <td class="text-center" id="{{ s.name }}">
-                    <a href="/{{ s.svg }}">
-                        <img width="300" height="300" src="/{{ s.svg }}">
+                    <a href="{{ s.svg_path }}">
+                        <img width="300" height="300" src="{{ s.svg_path }}">
                     </a>
                 <br>
                 <dl>
