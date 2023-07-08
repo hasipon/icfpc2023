@@ -1,3 +1,4 @@
+1.err:score = 905681341
 2.err:score = 819403117
 3.err:score = 60238518
 4.err:score = 27938746
