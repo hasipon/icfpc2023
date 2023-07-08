@@ -1,7 +1,7 @@
 import os
 import glob
 import json
-for filename in glob.glob("*.out"):
+for filename in glob.glob("[0-9]*.out"):
 	with open(filename) as f:
 		a = list(f)
 		for i in range(0, len(a)):
