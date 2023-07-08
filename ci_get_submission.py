@@ -31,9 +31,19 @@ def main():
         with open(submission) as f:
             submission_id = f.read().strip()
         response = get_submission(submission_id)
-        with open('{}.result'.format(submission), mode="w") as result_file:
-            result_file.write(response.strip("\""))
-            result_file.write("\n")
+
+        failure = False
+        success = False
+        try:
+            failure = response.strip("\"")["Success"]["score"]["Failure"] is not None
+            success = response.strip("\"")["Success"]["score"]["Success"] is not None
+        except Exception:
+            pass
+
+        if failure or success:
+            with open('{}.result'.format(submission), mode="w") as result_file:
+                result_file.write(response.strip("\""))
+                result_file.write("\n")
 
 
 if __name__ == "__main__":
