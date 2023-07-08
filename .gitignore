@@ -5,3 +5,4 @@ a.out
 node_modules
 cmake-build-debug
 cmake-build-release
+a.out.dSYM
