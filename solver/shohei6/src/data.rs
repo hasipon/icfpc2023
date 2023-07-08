@@ -10,6 +10,7 @@ pub struct Problem {
 	pub musicians:Vec<usize>,
 	pub attendees:Vec<Attendee>,
 	pub pillars:Vec<Pillar>,
+	pub extention:Option<()>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
