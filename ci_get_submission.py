@@ -42,10 +42,12 @@ def main():
         except urllib.error.HTTPError as e:
             if e.code == 404:
                 os.remove(submission)
-                print(f"got 404. remove submission file {submission_id}")
+                print(f"got 404. remove submission file {submission}")
                 continue
-            else:
-                raise
+            if e.code == 503:
+                print(f"got 503. exit program for now")
+                return
+            raise
 
         js = json.loads(response)
         failure = "Failure" in js["Success"]["submission"]["score"]
