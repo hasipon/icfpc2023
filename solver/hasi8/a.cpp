@@ -103,6 +103,25 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
     return {true,score};
 }
 
+bool checkPlacements2(double x, double y, const vector<pair<double, double>>& placements, unsigned idx) {
+    for (unsigned i = 0; i < placements.size(); ++ i) {
+        if (i == idx) continue;
+        auto [x2, y2] = placements[i];
+        if ((x - x2) * (x - x2) + (y - y2) * (y - y2) < 100) {
+            return false;
+        }
+    }
+    return true;
+}
+
+pair<int, int> makeStart2(const Problem& problem, const vector<pair<double, double>>& placements, int idx) {
+    for (;;) {
+        double x0 = problem.stageLeft + 10 + rand() % ((int)problem.stageWidth - 19);
+        double y0 = problem.stageBottom + 10 + rand() % ((int)problem.stageHeight - 19);
+        if (checkPlacements2(x0, y0, placements, idx)) return {x0, y0};
+    }
+}
+
 int main(int argc, char** argv) {
     if (argc < 1) {
         cerr << "Usage: " << argv[0] << " <input file>" << endl;
@@ -148,4 +167,27 @@ int main(int argc, char** argv) {
         return 1;
     }
     cerr << "score = " << score << endl;
+
+    for (;;) {
+        int idx = rand() % placements.size();
+        auto prev = placements[idx];
+        placements[idx] = makeStart2(problem, placements, idx);
+        auto [ok2, score2] = calcScore(problem, placements);
+        if (!ok2) {
+            cerr << "Invalid placements" << endl;
+            return 1;
+        }
+        if (score2 > score) {
+            score = score2;
+            cerr << "score = " << score << endl;
+            cout << "{\"placements\":[";
+            for (unsigned i = 0; i < placements.size(); i++) {
+                if (i > 0) cout << ",";
+                cout << "{\"x\":" << placements[i].first << ",\"y\":" << placements[i].second << "}";
+            }
+            cout << "]}" << endl;
+        } else {
+            placements[idx] = prev;
+        }
+    }
 }
