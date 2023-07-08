@@ -139,7 +139,7 @@ class Main
 			answerGraphics.drawCircle(
 				p.x * scale, 
 				480 - p.y * scale, 
-				10 * scale
+				5 * scale
 			);
 		}
 		setHash();
