@@ -197,11 +197,12 @@ def prepare_problem_svg(problem_id):
 
 def gen_solution_svg(p_js, s_js):
     d = dw.Drawing(p_js["stage_width"], p_js["stage_height"], id_prefix='id', transform='scale(1,-1)')
-    d.append(dw.Rectangle(0, 0, p_js["stage_width"], p_js["stage_height"], fill='#D0E0F0'))
+    d.append(dw.Rectangle(0, 0, p_js["stage_width"], p_js["stage_height"], fill='#000000'))
+    d.append(dw.Rectangle(5, 5, p_js["stage_width"] - 10, p_js["stage_height"] - 10, fill='#D0E0F0'))
     for a in s_js["placements"]:
         d.append(dw.Circle(a["x"] - p_js["stage_bottom_left"][0],
                            a["y"] - p_js["stage_bottom_left"][1],
-                           10, stroke="red", fill="red", fill_opacity="0.2", stroke_opacity="0.5"))
+                           5, stroke="red", fill="red", fill_opacity="0.2", stroke_opacity="0.5"))
     return d
 
 
