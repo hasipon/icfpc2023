@@ -1,5 +1,5 @@
 ﻿#define LOCAL_DEBUG 1
-#define ENABLE_GV 0
+#define ENABLE_GV 1
 
 #include "inada1.h"
 #define GV_JS
@@ -132,6 +132,12 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
     return { true,score };
 }
 
+void gvPlacements(const vector<pair<double, double> >& placements) {
+    for (const auto& p : placements) {
+        gvCircle(p.first, p.second, 5, gvRGB(255, 0, 0));
+    }
+}
+
 // 外周に沿った placement を返却する
 vector<pair<double, double>> makeEdgePlacement(const Problem& problem) {
     const auto x = problem.stageLeft + 10.0;
@@ -139,7 +145,7 @@ vector<pair<double, double>> makeEdgePlacement(const Problem& problem) {
     const auto w = problem.stageWidth - 20.0;
     const auto h = problem.stageHeight - 20.0;
 
-    const auto speed = 15.0;
+    const auto speed = 10.0;
     auto dx = 0.0;
     auto dy = speed;
     auto left = x;
@@ -320,6 +326,8 @@ int main(int argc, char* argv[]) {
     }
     cout << "]}" << endl;
 
+    gvNewTime();
+    gvPlacements(placement);
     auto res = calcScore(problem, placement);
     if (!res.first) throw runtime_error("invalid placement");
     cerr << "score = " << res.second << endl;
