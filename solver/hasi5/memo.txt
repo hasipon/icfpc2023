@@ -1,6 +1,7 @@
 2.err:score = 819403117
 3.err:score = 60238518
 4.err:score = 27938746
+5.err:score = 47857616
 6.err:score = 131405126
 7.err:score = 77738385
 8.err:score = 1572362655
