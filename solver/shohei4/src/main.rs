@@ -28,7 +28,7 @@ fn solve(index:u32, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let w = problem.stage_width - 20.0;
     let h = problem.stage_height - 20.0;
     let mut max_taste = 0.0;
-    let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(1);
+    let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(3);
     
     // 外側に配置する
     {
@@ -86,7 +86,7 @@ fn solve(index:u32, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let answer:Answer = Answer { placements };
     let answer_string = serde_json::to_string(&answer)?;
     fs::write(
-        format!("../../solutions/{}-shohei4-2.json", index), 
+        format!("../../solutions/{}-shohei4-3.json", index), 
         &answer_string
     )?;
     Ok(())
@@ -208,7 +208,7 @@ fn yama<R:Rng>(
 }
 
 fn try_swap<R:Rng>(problem:&Problem, placements:&mut Vec<Point>, rng:&mut R) {
-    let rate = (130.0 / placements.len() as f64).min(1.0);
+    let rate = (300.0 / placements.len() as f64).min(1.0);
     for i in 0..placements.len()
     {
         println!("{}/{}", i, placements.len());
