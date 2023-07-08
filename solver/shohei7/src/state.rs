@@ -5,7 +5,7 @@ use crate::data::Problem;
 pub struct CacheState {
     pub musician_groups:HashMap<usize, Vec<usize>>,
 	pub placement_score:Vec<f64>,
-	pub placement_sights:Vec<Option<Vec<Sight>>>,
+    pub placement_sights:Vec<Option<Vec<Sight>>>,
 }
 
 impl CacheState {
