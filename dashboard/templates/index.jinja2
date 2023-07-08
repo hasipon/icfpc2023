@@ -31,19 +31,19 @@
                         <a href="http://35.221.99.118/repo/problem.json/{{ p.id }}.json">{{ p.name }}</a>
                         <br>
                         <a href="/solutions/{{ p.id }}">回答一覧 ({{solutions[p.id] | length }} 件)</a><br>
-                        <br>
-                        <span style="font-weight: bold">Room&Stage</span><br>
-                        {{ p.room_width }} x {{ p.room_height }} <br>
-                        {{ p.stage_width }} x {{ p.stage_height }} <br>
-                        {{ p.stage_bottom_left }}<br>
-                        <br>
-                        <span style="font-weight: bold">Musicians&Attendees&Tastes</span><br>
-                        {{ p.musicians_size }} <br>
-                        {{ p.attendees_size }} <br>
-                        {{ p.tastes_size }} <br>
-                        <br>
                         <span style="font-weight: bold">理論値との差</span><br>
                         {{ "%.2E" | format(p.diff_ideal_score) }} <br>
+                        <br>
+                        <span style="font-weight: bold">Room&Stage&Pillar</span><br>
+                        {{ p.room_width }} x {{ p.room_height }} <br>
+                        {{ p.stage_width }} x {{ p.stage_height }} {{ p.stage_bottom_left }}<br>
+                        {{ p.pillars_size }}<br>
+                        <br>
+                        <span style="font-weight: bold">Musicians&Attendees&Tastes</span><br>
+                        {{ p.musicians_size }}
+                        {{ p.attendees_size }}
+                        {{ p.tastes_size }}
+                        <br>
                     </td>
 
                     <td class="text-center">

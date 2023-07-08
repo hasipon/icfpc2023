@@ -1,5 +1,5 @@
 ﻿#define LOCAL_DEBUG 1
-#define ENABLE_GV 0
+#define ENABLE_GV 1
 
 #include "inada1.h"
 #define GV_JS
@@ -20,8 +20,12 @@
 using namespace std;
 namespace fs = std::filesystem;
 
+#if LOCAL_DEBUG
+std::mt19937 g_rand(12345);
+#else
 std::random_device rd;
 std::mt19937 g_rand(rd());
+#endif
 
 #include <iostream>
 #include <vector>
@@ -38,6 +42,12 @@ struct Attendee {
     vector<double> tastes;
 };
 
+struct Pillar {
+    double x;
+    double y;
+    double r;
+};
+
 struct Problem {
     double roomWidth;
     double roomHeight;
@@ -47,16 +57,18 @@ struct Problem {
     double stageLeft;
     vector<int> musicians;
     vector<Attendee> attendees;
+    vector<Pillar> pillars;
 };
 
-bool isBlocked(double x0, double y0, double x1, double y1, double x2, double y2) {
+bool isBlocked(double x0, double y0, double x1, double y1, double x2, double y2, double radius) {
     complex<double> p0(x0, y0), p1(x1, y1), p2(x2, y2);
     if (real(conj(p1 - p0) * (p2 - p0)) < 0) return false;
     if (real(conj(p0 - p1) * (p2 - p1)) < 0) return false;
     double t = real(conj(p2 - p0) * (p0 - p1)) / norm(p0 - p1);
-    return abs(p2 - (p0 + (p0 - p1) * t)) < 5;
+    return abs(p2 - (p0 + (p0 - p1) * t)) < radius;
 }
 
+// 問題仕様に沿ったスコア計算 (激重)
 pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, double>> placements) {
     if (placements.size() != problem.musicians.size()) {
         return { false, 0 };
@@ -76,19 +88,43 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
             }
         }
     }
+    vector<double> factor(placements.size(), 1);
+    if (!problem.pillars.empty()) {
+        for (unsigned i = 0; i < placements.size(); i++) {
+            auto [x1, y1] = placements[i];
+            for (unsigned j = 0; j < placements.size(); j++) {
+                if (j != i && problem.musicians[i] == problem.musicians[j]) {
+                    auto [x2, y2] = placements[j];
+                    auto d2 = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
+                    factor[i] += 1 / sqrt(d2);
+                }
+            }
+        }
+    }
     double score = 0;
     for (auto& a : problem.attendees) {
         for (unsigned i = 0; i < placements.size(); i++) {
             auto [x, y] = placements[i];
-            for (unsigned j = 0; j < placements.size(); j++) if (i != j) {
-                auto [x2, y2] = placements[j];
-                if (isBlocked(a.x, a.y, x, y, x2, y2)) {
+            for (unsigned j = 0; j < placements.size(); j++) {
+                if (i != j) {
+                    auto [x2, y2] = placements[j];
+                    if (isBlocked(a.x, a.y, x, y, x2, y2, 5)) {
+                        goto next;
+                    }
+                }
+            }
+            for (auto pr : problem.pillars) {
+                if (isBlocked(a.x, a.y, x, y, pr.x, pr.y, pr.r)) {
                     goto next;
                 }
             }
             {
                 auto d2 = (a.x - x) * (a.x - x) + (a.y - y) * (a.y - y);
-                score += (long long)ceil(1000000 * a.tastes[problem.musicians[i]] / d2); // NOLINT(cppcoreguidelines-narrowing-conversions)
+                auto s = (long long)ceil(1000000 * a.tastes[problem.musicians[i]] / d2);
+                if (factor[i] > 1) {
+                    s = (long long)ceil(factor[i] * s); // NOLINT(cppcoreguidelines-narrowing-conversions)
+                }
+                score += s; // NOLINT(cppcoreguidelines-narrowing-conversions)
             }
         next:;
         }
@@ -96,6 +132,77 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
     return { true,score };
 }
 
+void gvPlacements(const vector<pair<double, double> >& placements) {
+    for (const auto& p : placements) {
+        gvCircle(p.first, p.second, 5, gvRGB(255, 0, 0));
+    }
+}
+
+// 外周に沿った placement を返却する
+vector<pair<double, double>> makeEdgePlacement(const Problem& problem) {
+    const auto x = problem.stageLeft + 10.0;
+    const auto y = problem.stageBottom + 10.0;
+    const auto w = problem.stageWidth - 20.0;
+    const auto h = problem.stageHeight - 20.0;
+
+    const auto speed = 10.0;
+    auto dx = 0.0;
+    auto dy = speed;
+    auto left = x;
+    auto right = x + w;
+    auto top = y;
+    auto bottom = y + h;
+    auto cx = right;
+    auto cy = y;
+
+    vector<pair<double, double>> placements;
+    for (int i = 0; i < problem.musicians.size(); i++) {
+        placements.emplace_back(cx, cy);
+        cx += dx;
+        cy += dy;
+
+
+        if (cy > bottom) {
+            right -= 10.0;
+            cy = bottom;
+            cx = right;
+
+            dx = -speed;
+            dy = 0.0;
+        }
+
+        if (cx < left) {
+            bottom -= 10.0;
+            cx = left;
+            cy = bottom;
+
+            dy = -speed;
+            dx = 0.0;
+        }
+
+        if (cy < top) {
+            left += 10.0;
+            cy = top;
+            cx = left;
+
+            dx = speed;
+            dy = 0.0;
+        }
+
+        if (cx > right) {
+            top += 10.0;
+            cx = right;
+            cy = top;
+
+            dx = 0.0;
+            dy = speed;
+        }
+    }
+
+    return placements;
+}
+
+// 1つのTastesとAttendeesのみを考慮した簡易スコア計算
 double calcScore2(const Problem& problem, int taste, double x, double y) {
     double score = 0;
     for (auto& a : problem.attendees) {
@@ -105,6 +212,7 @@ double calcScore2(const Problem& problem, int taste, double x, double y) {
     return score;
 }
 
+// calcScore2 を使った山登りを行ってスコアだけ返す
 double yamaScore(const Problem& problem, int taste, double x0, double y0) {
     const double D = 0.5;
     const double dx[4] = { +D, -D, 0, 0 };
@@ -135,6 +243,7 @@ double yamaScore(const Problem& problem, int taste, double x0, double y0) {
     return score;
 }
 
+// (x,y) にplacementを追加できるか (Stageの縁は考慮しない)
 bool checkPlacements(double x, double y, const vector<pair<double, double>>& placements) {
     for (auto [x2, y2] : placements) {
         if ((x - x2) * (x - x2) + (y - y2) * (y - y2) < 100) {
@@ -144,6 +253,7 @@ bool checkPlacements(double x, double y, const vector<pair<double, double>>& pla
     return true;
 }
 
+// ランダムな placement 生成
 pair<int, int> makeStart(const Problem& problem, const vector<pair<double, double>>& placements) {
     for (;;) {
         double x0 = problem.stageLeft + 10 + rand() % ((int)problem.stageWidth - 19);
@@ -152,138 +262,23 @@ pair<int, int> makeStart(const Problem& problem, const vector<pair<double, doubl
     }
 }
 
-double calcScore3(const Problem& problem, const vector<unsigned>& perm, const vector<pair<double, double>>& placements, const set<pair<unsigned, unsigned>>& blocking, int taste, double x, double y) {
-    double score = 0;
-    for (unsigned k = 0; k < problem.attendees.size(); ++k) {
-        auto& a = problem.attendees[k];
-        bool blocked = false;
-        for (unsigned jj = 0; jj < placements.size(); ++jj) {
-            auto j = perm[jj];
-            auto [x1, y1] = placements[j];
-            if (!blocked && isBlocked(a.x, a.y, x, y, x1, y1)) {
-                blocked = true;
-            }
-            if (!blocking.count({ j, k }) && isBlocked(a.x, a.y, x1, y1, x, y)) {
-                auto d2 = (a.x - x1) * (a.x - x1) + (a.y - y1) * (a.y - y1);
-                score -= a.tastes[problem.musicians[j]] / d2;
-            }
-        }
-        if (!blocked) {
-            auto d2 = (a.x - x) * (a.x - x) + (a.y - y) * (a.y - y);
-            score += a.tastes[taste] / d2;
-        }
-    }
-    return score;
-}
-
-pair<double, double> yama(const Problem& problem, int taste, pair<int, int> start, const vector<pair<double, double>>& placements) {
-    const double D = 1;
-    const double dx[4] = { +D, -D, 0, 0 };
-    const double dy[4] = { 0, 0, +D, -D };
-    double xx = start.first;
-    double yy = start.second;
-    double score = calcScore2(problem, taste, xx, yy);
-    for (;;) {
-        int k = -1;
-        for (int i = 0; i < 4; ++i) {
-            double x = xx + dx[i];
-            double y = yy + dy[i];
-            if (
-                problem.stageBottom + 10 <= y && y <= problem.stageBottom + problem.stageHeight - 10 &&
-                problem.stageLeft + 10 <= x && x <= problem.stageLeft + problem.stageWidth - 10
-                ) {
-                if (!checkPlacements(x, y, placements)) continue;
-                double s = calcScore2(problem, taste, x, y);
-                if (s > score) {
-                    score = s;
-                    k = i;
-                }
-            }
-        }
-        if (k == -1) break;
-        xx += dx[k];
-        yy += dy[k];
-    }
-    return { xx, yy };
-}
-
-pair<double, double> yama3(const Problem& problem, int taste, double x0, double y0, double score, const vector<pair<double, double>>& placements, const vector<unsigned>& perm, const set<pair<unsigned, unsigned>>& blocking) {
-    const double D = 1;
-    const double dx[4] = { +D, -D, 0, 0 };
-    const double dy[4] = { 0, 0, +D, -D };
-    double xx = x0;
-    double yy = y0;
-    for (;;) {
-        int k = -1;
-        for (int i = 0; i < 4; ++i) {
-            double x = xx + dx[i];
-            double y = yy + dy[i];
-            if (problem.stageBottom + 10 <= y && y <= problem.stageBottom + problem.stageHeight - 10 && problem.stageLeft + 10 <= x && x <= problem.stageLeft + problem.stageWidth - 10) {
-                if (!checkPlacements(x, y, placements)) continue;
-                double s = calcScore3(problem, perm, placements, blocking, taste, x, y);
-                if (s > score) {
-                    score = s;
-                    k = i;
-                }
-            }
-        }
-        if (k == -1) break;
-        xx += dx[k];
-        yy += dy[k];
-    }
-    return { xx, yy };
-}
-
 vector<pair<double, double>> solve(const Problem& problem) {
-    unsigned N = problem.musicians.size();
-    vector<pair<double, double>> res(N);
-    map<double, vector<unsigned>> yy;
-    for (unsigned i = 0; i < N; ++i) {
-        auto s = yamaScore(problem, problem.musicians[i], problem.stageLeft + problem.stageWidth / 2, problem.stageBottom + problem.stageHeight / 2);
-        yy[-s].push_back(i);
+    /*
+	vector<pair<double, double> > placements;
+    while (placements.size() < problem.musicians.size()) {
+        placements.emplace_back(makeStart(problem, placements));
     }
-    vector<unsigned> perm;
-    for (auto& p : yy) {
-        shuffle(p.second.begin(), p.second.end(), g_rand);
-        for (auto i : p.second) perm.push_back(i);
-    }
-    vector<pair<double, double>> placements;
-    set<pair<unsigned, unsigned>> blocking;
-    for (auto i : perm) {
-        int taste = problem.musicians[i];
-        auto best = yama(problem, problem.musicians[i], makeStart(problem, placements), placements);
-        double bestScore = calcScore3(problem, perm, placements, blocking, taste, best.first, best.second);
-        for (int tt = 0; tt < 5; ++tt) {
-            auto pos = yama(problem, problem.musicians[i], makeStart(problem, placements), placements);
-            auto s = calcScore3(problem, perm, placements, blocking, taste, pos.first, pos.second);
-            if (s > bestScore) {
-                bestScore = s;
-                best = pos;
-            }
-        }
-        auto [x2, y2] = yama3(problem, taste, best.first, best.second, bestScore, placements, perm, blocking);
-        res[i] = { x2, y2 };
-        placements.push_back(res[i]);
-        for (unsigned k = 0; k < problem.attendees.size(); ++k) {
-            auto& a = problem.attendees[k];
-            for (unsigned jj = 0; jj < placements.size() - 1; jj++) {
-                auto j = perm[jj];
-                if (blocking.count({ j, k })) continue;
-                auto [x, y] = placements[jj];
-                if (isBlocked(a.x, a.y, x, y, x2, y2)) {
-                    blocking.insert({ j, k });
-                }
-            }
-        }
-    }
-    return res;
+    return placements;
+    */
+
+    return makeEdgePlacement(problem);
 }
 
 void readProblem(std::istream& is, Problem& problem) {
     is >> problem.roomWidth >> problem.roomHeight;
     is >> problem.stageWidth >> problem.stageHeight;
     is >> problem.stageLeft >> problem.stageBottom;
-    int musicianN, tasteN, attendeeN;
+    int musicianN, tasteN, attendeeN, pillarN;
     is >> musicianN >> tasteN;
     problem.musicians.resize(musicianN);
     for (auto& m : problem.musicians) {
@@ -298,6 +293,11 @@ void readProblem(std::istream& is, Problem& problem) {
             is >> t;
         }
     }
+    is >> pillarN;
+    problem.pillars.resize(pillarN);
+    for (auto& p : problem.pillars) {
+        is >> p.x >> p.y >> p.r;
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -306,16 +306,19 @@ int main(int argc, char* argv[]) {
 
     Problem problem;
     {
-        ifstream ifs("../../problems.kyopro/1.kyopro");
+        // ifstream ifs("../../problems.kyopro/1.kyopro");
+        ifstream ifs("../../problems.kyopro/90.kyopro");
 		readProblem(ifs, problem);
-        cerr << problem.attendees.size();
     }
 #else
     Problem problem;
     readProblem(cin, problem);
 #endif
 
+    cerr << "pillar:" << problem.pillars.size() << endl;
+
     auto placement = solve(problem);
+
     cout << "{\"placements\":[";
     for (unsigned i = 0; i < placement.size(); i++) {
         if (i > 0) cout << ",";
@@ -323,6 +326,8 @@ int main(int argc, char* argv[]) {
     }
     cout << "]}" << endl;
 
+    gvNewTime();
+    gvPlacements(placement);
     auto res = calcScore(problem, placement);
     if (!res.first) throw runtime_error("invalid placement");
     cerr << "score = " << res.second << endl;
