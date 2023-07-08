@@ -43,18 +43,18 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     // 外側に配置する
     {
         let mut dx = 0.0;
-        let mut dy: f64 = 1.0;
+        let mut dy: f64 = -1.0;
         let mut left = x;
         let mut right = x + w;
         let mut top = y;
         let mut bottom = y + h;
-        let mut cx = right;
-        let mut cy = y;
+        let mut cx = left;
+        let mut cy = bottom;
 
         let mut i = 0;
         while i < problem.musicians.len()
         {
-            let speed = 10.5;
+            let speed = 10.0;
             placements.push(Point{x:cx, y:cy});
             i += 1;
             
@@ -105,7 +105,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
 
     let answer:Answer = Answer { placements };
     let answer_string = serde_json::to_string(&answer)?;
-    let name = "shohei7-3";
+    let name = "shohei7-4";
     fs::write(
         format!("../../solutions/{}-{}.json", index, name), 
         &answer_string
