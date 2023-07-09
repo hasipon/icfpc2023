@@ -190,6 +190,15 @@ func gitCommitAndPush() {
 		log.Println(string(out))
 	}
 
+	cmd = exec.Command("git", "pull")
+	cmd.Dir = conf.RepoRoot
+	if out, err := cmd.CombinedOutput(); err != nil {
+		log.Println("[gitCommitAndPush] exec.Command (git pull) Error", err)
+		// return
+	} else {
+		log.Println(string(out))
+	}
+
 	cmd = exec.Command("git", "push")
 	cmd.Dir = conf.RepoRoot
 	if out, err := cmd.CombinedOutput(); err != nil {
