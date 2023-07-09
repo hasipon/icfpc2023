@@ -78,17 +78,19 @@ pub struct Sight {
     pub d2:f64,
 }
 
-pub fn s_eval(problem:&Problem, placements:&Vec<Point>, cache:&mut SwapState) -> f64 {
+pub fn s_eval(problem:&Problem, placements:&Vec<Point>, volumes:&mut Vec<f64>, cache:&mut SwapState) -> f64 {
     let mut result = 0.0;
     for i in 0..placements.len()
     {
-        result += s_eval_placement(problem, placements, i, true, cache);
+        let (score, volume) = s_eval_placement(problem, placements, i, true, cache);
+        result += score;
+        volumes[i] = volume;
     }
     result
 }
 
 // 各ミュージシャンごとの観客の評価値の合算
-pub fn s_eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, total:bool, cache:&mut SwapState) -> f64 {
+pub fn s_eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, total:bool, cache:&mut SwapState) -> (f64, f64) {
     let mut nearest_d = std::f64::INFINITY;
     let mut nearest_dir = 0.0;
     let center = placements[index];
@@ -220,7 +222,7 @@ pub fn s_eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, t
             result += bonus;
         }
     }
-    result
+    if result < 0.0 {(0.0, 0.0)} else {(result * 10.0, 0.0)}
 }
 
 
@@ -231,14 +233,14 @@ pub fn try_swap<R:Rng>(problem:&Problem, placements:&mut Vec<Point>, rng:&mut R,
         for j in i + 1..placements.len()
         {
             if true { 
-                let score1 = s_eval_placement(problem, placements, i, false, cache) + s_eval_placement(problem, placements, j, false, cache);
+                let score1 = s_eval_placement(problem, placements, i, false, cache).0 + s_eval_placement(problem, placements, j, false, cache).0;
                 let scorei = cache.placement_score[i];
                 let scorej = cache.placement_score[j];
 
                 placements.swap(i, j);
                 cache.swap_placement(i, j);
                 
-                let score2 = s_eval_placement(problem, placements, i, false, cache) + s_eval_placement(problem, placements, j, false, cache);
+                let score2 = s_eval_placement(problem, placements, i, false, cache).0 + s_eval_placement(problem, placements, j, false, cache).0;
                 if score1 > score2 {
                     placements.swap(i, j);
                     cache.swap_placement(i, j);
