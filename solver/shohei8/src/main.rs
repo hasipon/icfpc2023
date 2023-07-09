@@ -19,7 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let timestamp = Utc::now().timestamp();
 
     let args: Vec<String> = env::args().collect();
-    let id = if args.len() <= 1 { "81" } else { &args[1] };
+    let id = if args.len() <= 1 { "11" } else { &args[1] };
     solve(id, timestamp)?;
 
     Ok(())
@@ -41,7 +41,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
 
     // ランダムに配置する
     let mut grid_state = GridState::new(&problem);
-    placements = grid_state.init_grid(&problem, &mut rng);
+    placements = grid_state.init_grid(&problem);
     
     let mut swap_state = SwapState::new(&problem);
     for i in 0..4
@@ -49,20 +49,14 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         println!("{}: s{}:{}", index, i, s_eval(&problem, &placements, &mut swap_state));
         try_swap(&problem, &mut placements, &mut rng, &mut swap_state);
         swap_state = SwapState::new(&problem);
-
-        //println!("{}: y{}:{}", index, i, s_eval(&problem, &placements, &mut swap_state));
-        //try_grid_move(&problem, &mut placements, &mut rng, &mut grid_state);
     }
 
-    println!("{}: last:{}", index, s_eval(&problem, &placements, &mut swap_state));
-    try_swap(&problem, &mut placements, &mut rng, &mut swap_state);
-    
     let score = s_eval(&problem, &placements, &mut swap_state);
     println!("{}:{}", index, score);
 
     let answer:Answer = Answer { placements };
     let answer_string = serde_json::to_string(&answer)?;
-    let name = "shohei8";
+    let name = "shohei8-2";
     fs::write(
         format!("../../solutions/{}-{}.json", index, name), 
         &answer_string
