@@ -164,11 +164,11 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let answer:Answer = Answer { placements: bestPlacements };
     let answer_string = serde_json::to_string(&answer)?;
     let name = "shiota9";
-    println!("{}", &answer_string);
-    // fs::write(
-    //     format!("../../solutions/{}-{}-{}.json", index, name,timestamp),
-    //     &answer_string
-    // )?;
+    // println!("{}", &answer_string);
+    fs::write(
+        format!("../../solutions/{}-{}-{}.json", index, name,timestamp),
+        &answer_string
+    )?;
     // fs::write(
     //     format!("../../solutions/{}-{}-{}.myeval", index, name, timestamp),
     //     &bestScore.to_string()
