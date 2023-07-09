@@ -1,5 +1,5 @@
-﻿#define LOCAL_DEBUG 1
-#define ENABLE_GV 1
+﻿#define LOCAL_DEBUG 0
+#define ENABLE_GV 0
 
 #include "inada1.h"
 #define GV_JS
@@ -221,6 +221,12 @@ double yamaScore(const Problem& problem, int taste, double x0, double y0) {
     double yy = y0;
     double score = calcScore2(problem, taste, xx, yy);
     for (;;) {
+        // --
+        gvNewTime();
+        gvRect(problem.stageLeft, problem.stageBottom, problem.stageWidth, problem.stageHeight, gvRGB(64, 64, 128));
+        gvCircle(xx, yy, 5, gvRGB(255, 0, 0));
+        gvOutput("Score: %.6lf", score);
+        // --
         int k = -1;
         for (int i = 0; i < 4; ++i) {
             double x = xx + dx[i];
@@ -253,25 +259,146 @@ bool checkPlacements(double x, double y, const vector<pair<double, double>>& pla
     return true;
 }
 
-// ランダムな placement 生成
-pair<int, int> makeStart(const Problem& problem, const vector<pair<double, double>>& placements) {
-    for (;;) {
-        double x0 = problem.stageLeft + 10 + rand() % ((int)problem.stageWidth - 19);
-        double y0 = problem.stageBottom + 10 + rand() % ((int)problem.stageHeight - 19);
-        if (checkPlacements(x0, y0, placements)) return { x0, y0 };
+pair<bool, long long> calcScoreWithCache(
+    const Problem& problem,
+    const vector<pair<double, double>>& placements,
+    map<pair<double, double>, vector<double>>& cache,
+    bool ignore_factor
+    ) {
+
+    if (cache.empty()) {
+        if (placements.size() != problem.musicians.size()) {
+            return { false, 0 };
+        }
+        for (unsigned i = 0; i < placements.size(); i++) {
+            auto [x, y] = placements[i];
+            if (!(
+                problem.stageBottom + 10 <= y && y <= problem.stageBottom + problem.stageHeight - 10 &&
+                problem.stageLeft + 10 <= x && x <= problem.stageLeft + problem.stageWidth - 10
+                )) {
+                return { false, 0 };
+            }
+            for (unsigned j = 0; j < i; j++) {
+                auto [x2, y2] = placements[j];
+                if ((x - x2) * (x - x2) + (y - y2) * (y - y2) < 100) {
+                    return { false, 0 };
+                }
+            }
+        }
     }
+
+    vector<double> factor(placements.size(), 1);
+    if (!ignore_factor && !problem.pillars.empty()) {
+        for (unsigned i = 0; i < placements.size(); i++) {
+            auto [x1, y1] = placements[i];
+            for (unsigned j = 0; j < placements.size(); j++) {
+                if (j != i && problem.musicians[i] == problem.musicians[j]) {
+                    auto [x2, y2] = placements[j];
+                    auto d2 = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
+                    factor[i] += 1 / sqrt(d2);
+                }
+            }
+        }
+    }
+
+    if (cache.empty()) {
+        for (unsigned i = 0; i < placements.size(); i++) {
+            if (cache[placements[i]].empty()) {
+                cache[placements[i]].resize(problem.attendees[0].tastes.size());
+            }
+        }
+        for (auto& a : problem.attendees) {
+            for (unsigned i = 0; i < placements.size(); i++) {
+                auto [x, y] = placements[i];
+                for (unsigned j = 0; j < placements.size(); j++) {
+                    if (i != j) {
+                        auto [x2, y2] = placements[j];
+                        if (isBlocked(a.x, a.y, x, y, x2, y2, 5)) {
+                            goto next;
+                        }
+                    }
+                }
+                for (auto pr : problem.pillars) {
+                    if (isBlocked(a.x, a.y, x, y, pr.x, pr.y, pr.r)) {
+                        goto next;
+                    }
+                }
+
+                for (unsigned t = 0; t < a.tastes.size(); t++)
+                {
+                    const auto d2 = (a.x - x) * (a.x - x) + (a.y - y) * (a.y - y);
+                    auto s = (long long)ceil(1000000 * a.tastes[t] / d2);
+                    cache[placements[i]][t] += s;
+                }
+            next:;
+            }
+        }
+    }
+
+    double score = 0;
+    for (unsigned i = 0; i < placements.size(); i++) {
+        if (cache.find(placements[i]) == cache.end()) {
+            cerr << "Broken cache" << endl;
+            throw 1;
+        }
+        auto s = cache[placements[i]][problem.musicians[i]];
+        if (factor[i] > 1) {
+            s = (long long)ceil(factor[i] * s); // NOLINT(cppcoreguidelines-narrowing-conversions)
+        }
+        score += s;
+    }
+
+    return { true,score };
+}
+
+long long swapDeltaScore(
+    const Problem& problem,
+    const vector<pair<double, double>>& placements,
+    map<pair<double, double>, vector<double>>& cache,
+    bool ignore_factor,
+    int swap_i, int swap_j
+) {
+    assert(!cache.empty());
+    assert(cache.size() == placements.size());
+    if (!ignore_factor && !problem.pillars.empty()) {
+        throw 1;
+    }
+
+    double score = 0;
+    score -= cache[placements[swap_i]][problem.musicians[swap_i]];
+    score -= cache[placements[swap_j]][problem.musicians[swap_j]];
+
+    score += cache[placements[swap_i]][problem.musicians[swap_j]];
+    score += cache[placements[swap_j]][problem.musicians[swap_i]];
+    return score;
 }
 
 vector<pair<double, double>> solve(const Problem& problem) {
-    /*
-	vector<pair<double, double> > placements;
-    while (placements.size() < problem.musicians.size()) {
-        placements.emplace_back(makeStart(problem, placements));
-    }
-    return placements;
-    */
+    map<pair<double, double>, vector<double>> cache;
 
-    return makeEdgePlacement(problem);
+    auto placements = makeEdgePlacement(problem);
+    auto res = calcScoreWithCache(problem, placements, cache, false);
+    cerr << "calcScoreWithCache1: " << res.second << endl;
+    auto score = res.second;
+    for (int ite = 0; ite < 10; ite++) {
+        bool updated = false;
+        for (int i = 0; i < placements.size(); i++) {
+            for (int j = i + 1; j < placements.size(); j++) {
+                auto ds = swapDeltaScore(problem, placements, cache, false, i, j);
+                if (0 < ds) {
+                    score += ds;
+                    std::swap(placements[i], placements[j]);
+                    updated = true;
+                }
+            }
+        }
+        cerr << "score:" << score << endl;
+        if (!updated) {
+            break;
+        }
+    }
+
+    return placements;
 }
 
 void readProblem(std::istream& is, Problem& problem) {
@@ -300,35 +427,42 @@ void readProblem(std::istream& is, Problem& problem) {
     }
 }
 
+void writePlacementsJSON(std::ostream& os, const std::vector<pair<double, double> >& placements) {
+    cout << "{\"placements\":[";
+    for (unsigned i = 0; i < placements.size(); i++) {
+        if (i > 0) cout << ",";
+        cout << "{\"x\":" << placements[i].first << ",\"y\":" << placements[i].second << "}";
+    }
+    cout << "]}" << endl;
+}
+
 int main(int argc, char* argv[]) {
 #if LOCAL_DEBUG
     fs::current_path(R"(c:\projects\hasipon\icfpc2023\solver\inada)");
 
+    int problem_id = 1;
     Problem problem;
     {
-        // ifstream ifs("../../problems.kyopro/1.kyopro");
-        ifstream ifs("../../problems.kyopro/90.kyopro");
-		readProblem(ifs, problem);
+        ifstream ifs("../../problems.kyopro/" + to_string(problem_id) + ".kyopro");
+        readProblem(ifs, problem);
     }
 #else
+
     Problem problem;
     readProblem(cin, problem);
 #endif
 
-    cerr << "pillar:" << problem.pillars.size() << endl;
-
     auto placement = solve(problem);
-
-    cout << "{\"placements\":[";
-    for (unsigned i = 0; i < placement.size(); i++) {
-        if (i > 0) cout << ",";
-        cout << "{\"x\":" << placement[i].first << ",\"y\":" << placement[i].second << "}";
-    }
-    cout << "]}" << endl;
-
-    gvNewTime();
     gvPlacements(placement);
+
     auto res = calcScore(problem, placement);
+    writePlacementsJSON(cout, placement);
+#if LOCAL_DEBUG
+    {
+        ofstream ofs(to_string(problem_id) + "-inada1-" + to_string(res.second) + ".json");
+        writePlacementsJSON(ofs, placement);
+    }
+#endif
     if (!res.first) throw runtime_error("invalid placement");
     cerr << "score = " << res.second << endl;
 }
