@@ -1,0 +1,8 @@
+*.err
+*.out
+*.in
+a
+b
+c
+b*.txt
+c*.txt
