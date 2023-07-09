@@ -36,7 +36,7 @@ def main():
         with open(submission) as f:
             submission_id = f.read().strip()
 
-        time.sleep(1.0)
+        time.sleep(0.33)
         try:
             response = get_submission(submission_id).strip("\"")
         except urllib.error.HTTPError as e:
