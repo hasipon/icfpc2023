@@ -237,22 +237,32 @@ def gen_heatmap_image(p_js, heatmap):
     g_stage.append(dw.Rectangle(0, 0, p_js["stage_width"], p_js["stage_height"], fill='white'))
     min_score = max(x[0] for x in heatmap)
     max_score = min(x[0] for x in heatmap)
-    s, l = 100, 50
+
     for e in heatmap:
         score, x, y = e
-        scaled = (score - min_score) / (max_score - min_score)
-        h = (1-scaled) * 360
+        h = ((score - min_score) / (max_score - min_score)) * 240
         g_stage.append(dw.Rectangle(x - p_js["stage_bottom_left"][0],
                                     y - p_js["stage_bottom_left"][1],
-                                    10, 10, fill=f'hsl({h}, {s}%, {l}%)'))
-    d = dw.Drawing(p_js["stage_width"], p_js["stage_height"], id_prefix='id')
+                                    10, 10, fill=f'hsl({h}, 100%, 50%)'))
+
+    wh = max(p_js["stage_width"], p_js["stage_height"]) * 0.1
+    g_scale = dw.Group(id="scale", fill='none')
+    for i in range(10):
+        g_scale.append(dw.Rectangle(i * wh, 0, wh, wh, fill=f'hsl({(i/9) * 240}, 100%, 50%)'))
+        sample_score = min_score + (i * (max_score - min_score)) / 9
+        print(sample_score)
+        g_scale.append(dw.Text(f"{sample_score:.2f}", wh / 5, wh / 2 + i * wh, wh / 2, center=True, fill='black'))
+
+    wh = max(p_js["stage_width"], p_js["stage_height"])
+    d = dw.Drawing(wh, wh * 1.05 + wh, id_prefix='id')
     d.append(dw.Use(g_stage, 0, p_js["stage_height"]))
+    d.append(dw.Use(g_scale, 0, p_js["stage_height"] * 1.05))
     return d
 
 
 def prepare_heatmap_image(problem_id):
     file_name = f"{problem_id}-heatmap.svg"
-    if os.path.exists(static_path / file_name) and not problem_id < 3:
+    if os.path.exists(static_path / file_name):
         return file_name
     try:
         if not os.path.exists(heatmap_path / f"{problem_id}.csv"):
