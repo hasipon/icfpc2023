@@ -53,8 +53,8 @@ fn coreSolveGaishu(problem:&Problem, offsetX:f64, offsetY:f64) -> (f64, Vec<Poin
     let mut volume = Vec::new();
     let x = problem.stage_bottom_left.0 + 10.0 + offsetX;
     let y = problem.stage_bottom_left.1 + 10.0 + offsetY;
-    let w = problem.stage_width - 20.0;
-    let h = problem.stage_height - 20.0;
+    let w = problem.stage_width - 20.0 - offsetX;
+    let h = problem.stage_height - 20.0 - offsetY;
 
     // 外側に配置する
     {
@@ -229,9 +229,9 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let mut bestScore = 0.0;
     let mut bestPlacements = Vec::new();
     let mut bestVolumes = Vec::new();
-    for offsetX in [10 - problem.stage_bottom_left.0 as i64 % 10, 10 - (problem.stage_bottom_left.0 + problem.stage_width) as i64 % 10]
+    for offsetX in [10 - problem.stage_bottom_left.0 as i64 % 10, 10 - (problem.stage_bottom_left.0 + problem.stage_width ) as i64 % 10 + 1]
     {
-        for offsetY in  [10- problem.stage_bottom_left.1 as i64 % 10, 10 - (problem.stage_bottom_left.1 + problem.stage_height) as i64 % 10]{
+        for offsetY in  [10- problem.stage_bottom_left.1 as i64 % 10, 10 - (problem.stage_bottom_left.1 + problem.stage_height + 1.) as i64 % 10 +1]{
             let (score, placements, volumes) = coreSolveHeat(&problem, &heat, index, (offsetX % 10) as f64, (offsetY %10) as f64);
             eprintln!("heat {}", score);
             if score > bestScore {
