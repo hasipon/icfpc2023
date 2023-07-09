@@ -47,7 +47,12 @@ using Placements = vec<Placement>;
 using Volume = double;
 
 Placement operator - (Placement a, Placement b) { return {a.first - b.first, a.second - b.second}; }
-Placement operator + (Placement a, Placement b) { return {a.first + b.first, a.second + b.second}; }
+Placement operator += (Placement& a, Placement b) {
+  a.first += b.first;
+  a.second += b.second;
+  return a;
+}
+Placement operator + (Placement a, Placement b) { return a += b; }
 
 namespace geo {
   typedef complex<double> point;
@@ -348,6 +353,38 @@ pair<Placements, vec<Volume>> solve14(const Problem& problem) {
   return {placements, volumes};
 }
 
+pair<Placements, vec<Volume>> improve19(const Problem& problem)
+{
+  const int M = problem.musicians.size();
+  Placements placements(M);
+  vec<Volume> volumes(M);
+  {
+    ifstream fin("../../solutions/19-shohei5-2-hasi8.14-hasi13.json");
+    str s;
+    getline(fin, s);
+    each (c, s) {
+      unless (isdigit(c) || c == '.') c = ' ';
+    }
+    istringstream sin(s);
+    each (p, placements) assert(sin >> p);
+    each (volume, volumes) assert(sin >> volume);
+  }
+
+  for (int i = 0; i < M; ++i) {
+    if (volumes[i] == 0.0) {
+      while (true) {
+        Placement p = placements[i] + Placement(0, -5);
+        if (checkPlacements2(p.first, p.second, placements, i) && is_inside(problem, p)) {
+          placements[i] = p;
+        } else {
+          break;
+        }
+      }
+    }
+  }
+  return {placements, volumes};
+}
+
 int main(int argc, char** argv) {
     Problem problem;
     {
@@ -395,7 +432,9 @@ int main(int argc, char** argv) {
   each (i, musicianIndexesByInstrument) cerr << make_pair(i.first, i.second.size()) << ' '; cerr << endl;
 
 
-    auto [placements, volumes] = solve14(problem);
+
+    // auto [placements, volumes] = solve14(problem);
+    auto [placements, volumes] = improve19(problem);
 
     auto score = calcScore(problem, placements);
     cerr << "score = " << score << endl;
