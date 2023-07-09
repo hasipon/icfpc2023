@@ -53,8 +53,8 @@ fn coreSolveGaishu(problem:&Problem, offsetX:f64, offsetY:f64) -> (f64, Vec<Poin
     let mut volume = Vec::new();
     let x = problem.stage_bottom_left.0 + 10.0 + offsetX;
     let y = problem.stage_bottom_left.1 + 10.0 + offsetY;
-    let w = problem.stage_width - 20.0;
-    let h = problem.stage_height - 20.0;
+    let w = problem.stage_width - 20.0 - offsetX;
+    let h = problem.stage_height - 20.0 - offsetY;
 
     // 外側に配置する
     {
