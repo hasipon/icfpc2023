@@ -291,10 +291,14 @@ func mainRun() {
 				}(solverRuns[nextIndex])
 				nextIndex++
 				log.Printf("Enqueue run [%d/%d]\n", nextIndex, len(solverRuns))
-			} else {
+			}
+			last := nextIndex == len(solverRuns)
+			runsMtx.RUnlock()
+
+			if last {
+				wg.Wait()
 				cancel()
 			}
-			runsMtx.RUnlock()
 
 		case <-ctx.Done():
 			if ctx.Err() != nil {
