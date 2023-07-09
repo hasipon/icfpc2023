@@ -113,13 +113,13 @@ impl GridState {
                     }
                     score *= q;
                 }
-                //for crossing in &cache.crossing[p.to_index(self) as usize] {
-                //    if let Some(d2) =  cache.sights[crossing.m].get(&crossing.a)
-                //    {
-                //        let a = &problem.attendees[crossing.a];
-                //        score -= 1000000.0 * a.tastes[problem.musicians[index]] / d2;
-                //    }
-                //}
+                for crossing in &cache.crossing[p.to_index(self) as usize] {
+                    if let Some(d2) =  cache.sights[crossing.m].get(&crossing.a)
+                    {
+                        let a = &problem.attendees[crossing.a];
+                        score -= 1000000.0 * a.tastes[problem.musicians[index]] / d2;
+                    }
+                }
 
                 if score > best_score {
                     best_score = score;
@@ -131,17 +131,17 @@ impl GridState {
         (best, best_sights)
     }
 
-    pub fn init_grid(&self, problem:&Problem) -> Vec<Point> {
-        let mut result: Vec<Point> = Vec::new();
-        let mut cache = GridCache::new(self, problem);
-        for i in 0..problem.musicians.len()
-        {
-            let best = self.find_best(problem, &result, i, &mut cache);
-            cache.add(&self, &problem, &result, best.0, best.1,i);
-            result.push(best.0.to_point(&self));
-        }
-        result
-    }
+    //pub fn init_grid(&self, problem:&Problem) -> Vec<Point> {
+    //    let mut result: Vec<Point> = Vec::new();
+    //    let mut cache = GridCache::new(self, problem);
+    //    for i in 0..problem.musicians.len()
+    //    {
+    //        let best = self.find_best(problem, &result, i, &mut cache);
+    //        cache.add(&self, &problem, &result, best.0, best.1,i);
+    //        result.push(best.0.to_point(&self));
+    //    }
+    //    result
+    //}
     pub fn init_random_grid<R:Rng>(&mut self, problem:&Problem, rng:&mut R) -> Vec<Point> {
         let mut set = HashSet::new();
         let mut result: Vec<Point> = Vec::new();
@@ -154,10 +154,11 @@ impl GridState {
                 if !set.contains(&key)
                 {
                     set.insert(key);
-                    result.push(Point { 
+                    let p = Point { 
                         x: self.x + (x as f64 * self.scale_x) + 5.0, 
                         y: self.y + (y as f64 * self.scale_y) + 5.0,
-                    });
+                    };
+                    result.push(p);
                     break;
                 }
             }
