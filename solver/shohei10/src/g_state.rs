@@ -98,6 +98,7 @@ impl GridState {
                     let a = &problem.attendees[sight.attendee];
                     score += 1000000.0 * a.tastes[problem.musicians[index]] / sight.d2;
                 }
+                if score < 0.0 { score *= 0.0000001; }
                 if problem.extention.is_some() {
                     let mut q = 1.0;
 
