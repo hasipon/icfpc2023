@@ -1,0 +1,52 @@
+name: SolverRunner
+
+on:
+  workflow_dispatch:
+    inputs:
+      solver-path:
+        required: true
+        default: ""
+        description: Your solver path on the server.
+      solver-name:
+        required: true
+        default: "solver1"
+        description: Your solver name, will be used for submission file name.
+      problem-ids:
+        required: true
+        default: "1-5"
+        description: Problem id ranges. (ex. 1 2 3 5-10)
+      timeout-entire:
+        required: true
+        default: "1h30m"
+        description: Entire run timeout.
+      timeout-per-problem:
+        required: true
+        default: "2m"
+        description: Per problem run timeout.
+      max-parallel:
+        required: true
+        default: "2"
+        description: Max parallel execution.
+
+jobs:
+  build:
+    runs-on: [solver]
+    permissions: write-all
+    steps:
+      - uses: actions/checkout@v2
+      - name: run
+        run: cd runner && go run main.go
+        env:
+          REPO_ROOT: ${{ github.workspace }}
+          SOLVER_PATH: ${{ github.event.inputs.solver-path }}
+          SOLVER_NAME: ${{ github.event.inputs.solver-name }}
+          PROBLEM_IDS: ${{ github.event.inputs.problem-ids }}
+          TIMEOUT_ENTIRE: ${{ github.event.inputs.timeout-entire }}
+          TIMEOUT_PER_PROBLEM: ${{ github.event.inputs.timeout-per-problem }}
+          MAX_PARALLEL: ${{ github.event.inputs.max-parallel }}
+          AUTO_COMMIT: 1
+      - name: save outputs
+        uses: actions/upload-artifact@v3
+        with:
+          name: solver-outputs
+          path: runner/output
