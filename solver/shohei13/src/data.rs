@@ -44,3 +44,20 @@ pub struct Point {
     pub x:f64,
     pub y:f64,
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct Submission {
+	pub Success:SubmissionSuccess,
+}
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct SubmissionSuccess {
+	pub submission:SubmissionSubmission,
+}
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct SubmissionSubmission {
+	pub score:SubmissionScore,
+}
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct SubmissionScore {
+	pub Success:f64,
+}

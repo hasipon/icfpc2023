@@ -78,11 +78,12 @@ pub struct Sight {
     pub d2:f64,
 }
 
-pub fn s_eval(problem:&Problem, placements:&Vec<Point>, volumes:&mut Vec<f64>, cache:&mut SwapState) -> f64 {
+pub fn s_eval(problem:&Problem, placements:&Vec<Point>, volumes:&mut Vec<f64>) -> f64 {
+    let mut cache = SwapState::new(&problem);
     let mut result = 0.0;
     for i in 0..placements.len()
     {
-        let (score, volume) = s_eval_placement(problem, placements, i, true, cache);
+        let (score, volume) = s_eval_placement(problem, placements, i, true, &mut cache);
         result += score;
         volumes[i] = volume;
     }
