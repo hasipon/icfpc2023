@@ -1,10 +1,6 @@
 import os
 import glob
 import json
-import urllib.request
-import urllib.parse
-import urllib.error
-import time
 
 
 def load_json(s):
