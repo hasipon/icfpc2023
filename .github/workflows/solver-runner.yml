@@ -6,26 +6,26 @@ on:
       solver-path:
         required: true
         default: ""
-        description: Your solver path on the server.
+        description: Your solver path on the server. (/home/ubuntu/LOCAL/mysolver)
       solver-name:
         required: true
-        default: "solver1"
-        description: Your solver name, will be used for submission file name.
+        default: ""
+        description: Your solver name, will be used for submission file name. (ex. mysolver1)
       problem-ids:
         required: true
         default: "1-5"
         description: Problem id ranges. (ex. 1 2 3 5-10)
       timeout-entire:
         required: true
-        default: "1h30m"
+        default: "3h0m"
         description: Entire run timeout.
       timeout-per-problem:
         required: true
-        default: "2m"
+        default: "30m"
         description: Per problem run timeout.
       max-parallel:
         required: true
-        default: "2"
+        default: "20"
         description: Max parallel execution.
 
 jobs:
