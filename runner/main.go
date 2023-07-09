@@ -180,12 +180,21 @@ func gitAdd(newFileName string) {
 }
 
 func gitCommitAndPush() {
-	commitMessage := fmt.Sprintf("Runner Action:%v Add solution of %v", conf.ActionID, conf.SolverName)
-	cmd := exec.Command("git", "commit", "-m", fmt.Sprintf("%q", commitMessage))
+	commitMessage := fmt.Sprintf("[runner] Add solution of %v", conf.SolverName)
+	cmd := exec.Command("git", "commit", "-m", commitMessage)
 	cmd.Dir = conf.RepoRoot
 	if out, err := cmd.CombinedOutput(); err != nil {
-		log.Println("[gitCommitAndPush] exec.Command Error", err)
-		return
+		log.Println("[gitCommitAndPush] exec.Command (git commit) Error", err)
+		// return
+	} else {
+		log.Println(string(out))
+	}
+
+	cmd = exec.Command("git", "pull")
+	cmd.Dir = conf.RepoRoot
+	if out, err := cmd.CombinedOutput(); err != nil {
+		log.Println("[gitCommitAndPush] exec.Command (git pull) Error", err)
+		// return
 	} else {
 		log.Println(string(out))
 	}
@@ -193,29 +202,30 @@ func gitCommitAndPush() {
 	cmd = exec.Command("git", "push")
 	cmd.Dir = conf.RepoRoot
 	if out, err := cmd.CombinedOutput(); err != nil {
-		log.Println("[gitCommitAndPush] exec.Command Error", err)
-		return
+		log.Println("[gitCommitAndPush] exec.Command (git push) Error", err)
+		// return
 	} else {
 		log.Println(string(out))
 	}
 }
 
 func handleWorkerEnd(run *SolverRun) {
-	runsMtx.RLock()
-	defer runsMtx.RUnlock()
+	log.Printf("ProblemID:%d finished. exit:%d", run.ProblemID, run.ExitCode)
 
 	// copy solution
 	if run.StdOutPath != "" {
 		stdout, err := os.ReadFile(run.StdOutPath)
 		if err != nil {
 			log.Println("os.ReadFile(run.StdOutPath) Error:", err)
+		} else if len(stdout) == 0 {
+			log.Printf("[Problem:%d] stdout is empty", run.ProblemID)
 		} else if !json.Valid(stdout) {
-			log.Println("Invalid JSON output:", string(stdout))
+			log.Printf("[Problem:%d] stdout not JSON: %s", run.ProblemID, string(stdout))
 		} else {
 			filePath := path.Join(conf.RepoRoot, "solutions", run.SolutionFileName)
 			err := os.WriteFile(filePath, stdout, 0644)
 			if err != nil {
-				log.Println("os.WriteFile Error:", err, filePath)
+				log.Printf("[Problem:%d] os.WriteFile Error: %v File: %v", run.ProblemID, err, filePath)
 			} else {
 				log.Println("Saved:", filePath)
 				if conf.AutoCommit {
