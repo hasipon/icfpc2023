@@ -229,9 +229,9 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let mut bestScore = 0.0;
     let mut bestPlacements = Vec::new();
     let mut bestVolumes = Vec::new();
-    for offsetX in [10 - problem.stage_bottom_left.0 as i64 % 10, 10 - (problem.stage_bottom_left.0 + problem.stage_width) as i64 % 10]
+    for offsetX in [10 - problem.stage_bottom_left.0 as i64 % 10, 10 - (problem.stage_bottom_left.0 + problem.stage_width + 1.) as i64 % 10]
     {
-        for offsetY in  [10- problem.stage_bottom_left.1 as i64 % 10, 10 - (problem.stage_bottom_left.1 + problem.stage_height) as i64 % 10]{
+        for offsetY in  [10- problem.stage_bottom_left.1 as i64 % 10, 10 - (problem.stage_bottom_left.1 + problem.stage_height + 1.) as i64 % 10]{
             let (score, placements, volumes) = coreSolveHeat(&problem, &heat, index, (offsetX % 10) as f64, (offsetY %10) as f64);
             eprintln!("heat {}", score);
             if score > bestScore {
