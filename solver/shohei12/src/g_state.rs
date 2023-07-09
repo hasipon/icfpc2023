@@ -134,7 +134,7 @@ impl GridState {
                     if let Some(d2) =  cache.sights[crossing.m].get(&crossing.a)
                     {
                         let a = &problem.attendees[crossing.a];
-                        score -= 10000.0 * a.tastes[problem.musicians[crossing.m]] / d2;
+                        score -= 100000.0 * a.tastes[problem.musicians[crossing.m]] / d2;
                     }
                 }
 
