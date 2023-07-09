@@ -180,8 +180,8 @@ func gitAdd(newFileName string) {
 }
 
 func gitCommitAndPush() {
-	commitMessage := fmt.Sprintf("Runner Action:%v Add solution of %v", conf.ActionID, conf.SolverName)
-	cmd := exec.Command("git", "commit", "-m", fmt.Sprintf("%q", commitMessage))
+	commitMessage := fmt.Sprintf("[runner] Add solution of %v", conf.SolverName)
+	cmd := exec.Command("git", "commit", "-m", commitMessage)
 	cmd.Dir = conf.RepoRoot
 	if out, err := cmd.CombinedOutput(); err != nil {
 		log.Println("[gitCommitAndPush] exec.Command (git commit) Error", err)
