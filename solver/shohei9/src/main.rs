@@ -109,9 +109,9 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let score = s_eval(&problem, &placements, &mut volumes, &mut swap_state);
     println!("{}:{}", index, score);
 
-    let answer:Answer = Answer { placements };
+    let answer:Answer = Answer { placements, volumes };
     let answer_string = serde_json::to_string(&answer)?;
-    let name = "shohei9";
+    let name = "shohei9-2";
     fs::write(
         format!("../../solutions/{}-{}.json", index, name), 
         &answer_string

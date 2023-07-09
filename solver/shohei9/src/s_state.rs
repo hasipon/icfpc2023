@@ -222,7 +222,7 @@ pub fn s_eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, t
             result += bonus;
         }
     }
-    if result < 0.0 {(0.0, 0.0)} else {(result * 10.0, 0.0)}
+    if result < 0.0 {(0.0, 0.0)} else {(result * 10.0, 10.0)}
 }
 
 
