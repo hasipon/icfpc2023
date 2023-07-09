@@ -1,21 +1,122 @@
-#include <bits/stdc++.h>
-
-
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <map>
 #include <set>
 #include <cmath>
-#include <queue>
 #include <complex>
 #include <algorithm>
+
+// github.com/Johniel/contests
+// solver/johniel8/a.cpp
+
+#include <bits/stdc++.h>
+
+#define each(i, c) for (auto& i : c)
+#define unless(cond) if (!(cond))
+// #define endl "\n"
+
 using namespace std;
+
+template<typename P, typename Q> ostream& operator << (ostream& os, pair<P, Q> p) { os << "(" << p.first << "," << p.second << ")"; return os; }
+template<typename P, typename Q> istream& operator >> (istream& is, pair<P, Q>& p) { is >> p.first >> p.second; return is; }
+template<typename T> ostream& operator << (ostream& os, vector<T> v) { os << "("; for (auto& i: v) os << i << ","; os << ")"; return os; }
+template<typename T> istream& operator >> (istream& is, vector<T>& v) { for (auto& i: v) is >> i; return is; }
+template<typename T> ostream& operator << (ostream& os, set<T> s) { os << "#{"; for (auto& i: s) os << i << ","; os << "}"; return os; }
+template<typename K, typename V> ostream& operator << (ostream& os, map<K, V> m) { os << "{"; for (auto& i: m) os << i << ","; os << "}"; return os; }
+template<typename E, size_t N> istream& operator >> (istream& is, array<E, N>& a) { for (auto& i: a) is >> i; return is; }
+template<typename E, size_t N> ostream& operator << (ostream& os, array<E, N>& a) { os << "[" << N << "]{"; for (auto& i: a) os << i << ","; os << "}"; return os; }
+
+template<typename T> inline T setmax(T& a, T b) { return a = std::max(a, b); }
+template<typename T> inline T setmin(T& a, T b) { return a = std::min(a, b); }
+
+__attribute__((constructor)) static void ___initio(void) { ios_base::sync_with_stdio(false); cin.tie(nullptr); cout.setf(ios_base::fixed); cout.precision(15); return ; }
+
+using lli = long long int;
+using ull = unsigned long long;
+using str = string;
+template<typename T> using vec = vector<T>;
+
+constexpr array<int, 8> di({0, 1, -1, 0, 1, -1, 1, -1});
+constexpr array<int, 8> dj({1, 0, 0, -1, 1, -1, -1, 1});
+constexpr lli mod = 1e9 + 7;
+// constexpr lli mod = 998244353;
+
+namespace geo {
+  typedef complex<double> point;
+  struct box { point mn, mx; };
+  const double EPS = 1e-11;
+  bool eq(double a, double b)
+  {
+    return fabs(a - b) < EPS;
+  }
+  point normal(point v)
+  {
+    return v * point(0, -1);
+  }
+  double dot(point a, point b)
+  {
+    return (a.real() * b.real() + a.imag() * b.imag());
+  }
+  double cross(point a, point b)
+  {
+    return (a.real() * b.imag() - a.imag() * b.real());
+  }
+  double distance_lp(point a1, point a2, point b)
+  {
+    if(dot(a2-a1, b-a1) < EPS)return abs(b-a1);
+    if(dot(a1-a2, b-a2) < EPS)return abs(b-a2);
+    return abs(cross(a2-a1, b-a1)) / abs(a2-a1);
+  }
+  double distance_bp(box b, point p)
+  {
+    point a1(b.mn.real(), b.mx.imag());
+    point a2(b.mx.real(), b.mn.imag());
+    return min(
+      {
+        distance_lp(b.mn, a1, p),
+        distance_lp(b.mx, a1, p),
+        distance_lp(b.mn, a2, p),
+        distance_lp(b.mx, a2, p),
+      });
+  }
+  double distance_pp(double x1, double y1, double x2, double y2)
+  {
+    double x = x1 - x2;
+    double y = y1 - y2;
+    return sqrt( x * x + y * y );
+  }
+  double distance_pp(pair<double, double> a, pair<double, double> b)
+  {
+    return distance_pp(a.first, a.second, b.first, b.second);
+  }
+};
+
+uint32_t xorshift(void)
+{
+  // https://shindannin.hatenadiary.com/entry/2021/03/06/115415
+  static uint32_t x = 123456789;
+  static uint32_t y = 362436069;
+  static uint32_t z = 521288629;
+  static uint32_t w = 88675123;
+  uint32_t t;
+
+  t = x ^ (x << 11);
+  x = y; y = z; z = w;
+  return w = (w ^ (w >> 19)) ^ (t ^ (t >> 8));
+}
 
 struct Attendee {
     double x;
     double y;
     vector<double> tastes;
+  geo::point position(void) const { return geo::point(x, y); }
 };
+ostream& operator << (ostream& os, Attendee a) {
+  os << "Attendee" << make_pair(make_pair(a.x, a.y), a.tastes);
+  return os;
+}
+
 
 struct Problem {
     double roomWidth;
@@ -55,7 +156,7 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
             }
         }
     }
-    double score = 0;
+    lli score = 0;
     for (auto& a : problem.attendees) {
         for (unsigned i = 0; i < placements.size(); i++) {
             auto [x, y] = placements[i];
@@ -507,39 +608,6 @@ namespace min_cost_flow {
 };
 namespace mcf = min_cost_flow;
 
-#define each(i, c) for (auto& i : c)
-#define unless(cond) if (!(cond))
-template<typename T> using vec = vector<T>;
-
-// github.com/Johniel/contests
-// solver/johniel6/main.cpp
-
-
-
-#define each(i, c) for (auto& i : c)
-#define unless(cond) if (!(cond))
-// #define endl "\n"
-
-using namespace std;
-
-template<typename P, typename Q> ostream& operator << (ostream& os, pair<P, Q> p) { os << "(" << p.first << "," << p.second << ")"; return os; }
-template<typename P, typename Q> istream& operator >> (istream& is, pair<P, Q>& p) { is >> p.first >> p.second; return is; }
-template<typename T> ostream& operator << (ostream& os, vector<T> v) { os << "("; for (auto& i: v) os << i << ","; os << ")"; return os; }
-template<typename T> istream& operator >> (istream& is, vector<T>& v) { for (auto& i: v) is >> i; return is; }
-template<typename T> ostream& operator << (ostream& os, set<T> s) { os << "#{"; for (auto& i: s) os << i << ","; os << "}"; return os; }
-template<typename K, typename V> ostream& operator << (ostream& os, map<K, V> m) { os << "{"; for (auto& i: m) os << i << ","; os << "}"; return os; }
-template<typename E, size_t N> istream& operator >> (istream& is, array<E, N>& a) { for (auto& i: a) is >> i; return is; }
-template<typename E, size_t N> ostream& operator << (ostream& os, array<E, N>& a) { os << "[" << N << "]{"; for (auto& i: a) os << i << ","; os << "}"; return os; }
-
-template<typename T> inline T setmax(T& a, T b) { return a = std::max(a, b); }
-template<typename T> inline T setmin(T& a, T b) { return a = std::min(a, b); }
-
-__attribute__((constructor)) static void ___initio(void) { ios_base::sync_with_stdio(false); cin.tie(nullptr); cout.setf(ios_base::fixed); cout.precision(15); return ; }
-
-using lli = long long int;
-using ull = unsigned long long;
-using str = string;
-template<typename T> using vec = vector<T>;
 
 lli calcInstBaseScore(const Problem& problem, const pair<double, double> pos, const int inst) {
   const double x = pos.first;
@@ -690,6 +758,18 @@ int main() {
         for (auto& t : a.tastes) {
             cin >> t;
         }
+    }
+
+    geo::box box;
+    box.mn = geo::point(problem.stageLeft, problem.stageBottom);
+    box.mx = geo::point(problem.stageLeft + problem.stageWidth, problem.stageBottom + problem.stageHeight);
+    sort(problem.attendees.begin(), problem.attendees.end(), [&] (auto x, auto y) {
+      return geo::distance_bp(box, x.position()) < geo::distance_bp(box, y.position());
+    });
+    while (true) {
+      auto a = problem.attendees.back();
+      if (geo::distance_bp(box, a.position()) < 200) break;
+      problem.attendees.pop_back();
     }
 
     auto placement = solveF(problem);
