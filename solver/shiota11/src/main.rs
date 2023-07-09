@@ -121,7 +121,7 @@ fn coreSolveGaishu(problem:&Problem, offsetX:f64, offsetY:f64) -> (f64, Vec<Poin
     }
 
     let mut lastI  = 0.;
-    for i in 0..20
+    while(true)
     {
         let now = eval(&problem, &placements, &mut volume, &mut cache);
         if now == lastI{
@@ -150,8 +150,8 @@ fn coreSolveHeat(problem:&Problem, heat:&Vec<(f64,f64)>, index:i32, offsetX:f64,
     let mut placements = Vec::new();
     let mut volume = Vec::new();
 
-    let xRange = (problem.stage_bottom_left.0 + 10.0 , problem.stage_bottom_left.0 + problem.stage_width - 10.0);
-    let yRange = (problem.stage_bottom_left.1 + 10.0 , problem.stage_bottom_left.1 + problem.stage_height - 10.0);
+    let xRange = (problem.stage_bottom_left.0 + 10.0 , problem.stage_bottom_left.0 + problem.stage_width - 20.0);
+    let yRange = (problem.stage_bottom_left.1 + 10.0 , problem.stage_bottom_left.1 + problem.stage_height - 20.0);
     let mut amari = Vec::new();
     for (xx, yy) in heat {
         let x = xx + offsetX;
