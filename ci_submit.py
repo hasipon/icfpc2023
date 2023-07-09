@@ -33,6 +33,7 @@ def main():
     print(solutions_not_submitted)
 
     for solution in solutions_not_submitted:
+        time.sleep(1.0)
         problem_id = os.path.basename(solution).split("-", 1)[0]
         with open(solution) as f:
             contents = f.read()
