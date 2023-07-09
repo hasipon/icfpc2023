@@ -116,6 +116,7 @@ impl GridState {
                     for i in self.musician_groups.get(&problem.musicians[index]).unwrap()
                     {
                         if *i == index { continue; }
+                        if *i > placements.len() { continue; }
                         let p = placements[*i];
                         let dx = center.x - p.x;
                         let dy = center.y - p.y;
