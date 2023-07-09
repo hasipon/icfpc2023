@@ -16,6 +16,16 @@ pub struct GridState {
     pub scale_y:f64,
 }
 
+pub struct GridCache {
+    pub filled  :HashMap<i32, usize>,
+    pub crossing:HashMap<i32, Pair>,
+}
+
+pub struct Pair {
+    m:usize,
+    a:usize,
+}
+
 impl GridState {
     pub fn new(problem:&Problem) -> GridState {
         let x = problem.stage_bottom_left.0 + 5.0;
@@ -24,8 +34,8 @@ impl GridState {
         let height = problem.stage_height - 10.0;
         let w = (width  / 10.0).floor() as i32;
         let h = (height / 10.0).floor() as i32;
-        let scale_x = (width  - 10.0) / (w - 1) as f64 / 10.0; 
-        let scale_y = (height - 10.0) / (h - 1) as f64 / 10.0; 
+        let scale_x = (width  - 10.0) / (w - 1) as f64; 
+        let scale_y = (height - 10.0) / (h - 1) as f64; 
         let mut musician_groups:HashMap<usize, Vec<usize>> = HashMap::new();
         
         for i in 0..problem.musicians.len() 
@@ -61,8 +71,8 @@ impl GridState {
                 {
                     set.insert(key);
                     result.push(Point { 
-                        x: self.x + x as f64 * self.scale_x, 
-                        y: self.y + y as f64 * self.scale_y,
+                        x: self.x + (x as f64 * self.scale_x) + 0.5, 
+                        y: self.y + (y as f64 * self.scale_y) + 0.5,
                     });
                     break;
                 }
