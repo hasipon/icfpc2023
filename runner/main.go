@@ -16,20 +16,26 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/caarlos0/env/v9"
 )
 
-var (
-	RepoRoot          string
-	OutputDir         string
-	ActionID          string
-	SolverName        string
-	SolverPath        string
-	TimeoutEntire     time.Duration
-	TimeoutPerProblem time.Duration
-	MaxParallel       int
-	ProblemIDs        []int
-	AutoCommit        bool
+type Config struct {
+	RepoRoot          string        `env:"REPO_ROOT"`
+	OutputDir         string        `env:"OUTPUT_DIR" envDefault:"./output"`
+	ActionID          string        `env:"ACTION_ID"`
+	SolverName        string        `env:"SOLVER_NAME"`
+	SolverPath        string        `env:"SOLVER_PATH"`
+	ProblemIDRange    string        `env:"PROBLEM_IDS" envDefault:"1"`
+	TimeoutEntire     time.Duration `env:"TIMEOUT_ENTIRE" envDefault:"1h"`
+	TimeoutPerProblem time.Duration `env:"TIMEOUT_PER_PROBLEM" envDefault:"1m"`
+	MaxParallel       int           `env:"MAX_PARALLEL" envDefault:"4"`
+	AutoCommit        bool          `env:"AUTO_COMMIT" envDefault:"0"`
+}
 
+var (
+	conf       Config
+	ProblemIDs []int
 	runsMtx    sync.RWMutex
 	solverRuns []*SolverRun
 )
@@ -67,7 +73,7 @@ func (run *SolverRun) Run(ctx context.Context) {
 	cmd.Env = append(
 		os.Environ(),
 		fmt.Sprintf("PROBLEM_ID=%v", run.ProblemID),
-		fmt.Sprintf("REPO_ROOT=%v", RepoRoot),
+		fmt.Sprintf("REPO_ROOT=%v", conf.RepoRoot),
 		fmt.Sprintf("TIMEOUT=%d", int(run.Timeout.Seconds())),
 	)
 
@@ -75,7 +81,7 @@ func (run *SolverRun) Run(ctx context.Context) {
 	log.Println("Run:", cmdStr, "ProblemID:", run.ProblemID)
 
 	run.Error = func() error {
-		problem, err := os.ReadFile(path.Join(RepoRoot, "problems.kyopro", fmt.Sprintf("%d.kyopro", run.ProblemID)))
+		problem, err := os.ReadFile(path.Join(conf.RepoRoot, "problems.kyopro", fmt.Sprintf("%d.kyopro", run.ProblemID)))
 		if err != nil {
 			return errors.New(fmt.Sprintf("execCommand os.ReadFile Error: %v", err))
 		}
@@ -94,7 +100,7 @@ func (run *SolverRun) Run(ctx context.Context) {
 		}
 		defer stdinWriter.Close()
 
-		stdoutFilePath := path.Join(OutputDir, fmt.Sprintf("%d-%s-stdout.txt", run.ProblemID, filepath.Base(run.SolverPath)))
+		stdoutFilePath := path.Join(conf.OutputDir, fmt.Sprintf("%d-%s-stdout.txt", run.ProblemID, filepath.Base(run.SolverPath)))
 		stdoutFile, err := os.OpenFile(stdoutFilePath, os.O_RDWR|os.O_CREATE, 0644)
 		if err != nil {
 			return errors.New(fmt.Sprintf("execCommand OpenFile Error: %v", err))
@@ -102,7 +108,7 @@ func (run *SolverRun) Run(ctx context.Context) {
 		defer stdoutFile.Close()
 		run.StdOutPath = stdoutFilePath
 
-		stderrFilePath := path.Join(OutputDir, fmt.Sprintf("%d-%s-stderr.txt", run.ProblemID, filepath.Base(run.SolverPath)))
+		stderrFilePath := path.Join(conf.OutputDir, fmt.Sprintf("%d-%s-stderr.txt", run.ProblemID, filepath.Base(run.SolverPath)))
 		stderrFile, err := os.OpenFile(stderrFilePath, os.O_RDWR|os.O_CREATE, 0644)
 		if err != nil {
 			return errors.New(fmt.Sprintf("execCommand OpenFile Error: %v", err))
@@ -164,7 +170,7 @@ func (run *SolverRun) Run(ctx context.Context) {
 
 func gitAdd(newFileName string) {
 	cmd := exec.Command("git", "add", "solutions/"+newFileName)
-	cmd.Dir = RepoRoot
+	cmd.Dir = conf.RepoRoot
 	if out, err := cmd.CombinedOutput(); err != nil {
 		log.Println("[gitAdd] exec.Command Error", err)
 		return
@@ -174,9 +180,9 @@ func gitAdd(newFileName string) {
 }
 
 func gitCommitAndPush() {
-	commitMessage := fmt.Sprintf("Runner Action:%v Add solution of %v", ActionID, SolverName)
+	commitMessage := fmt.Sprintf("Runner Action:%v Add solution of %v", conf.ActionID, conf.SolverName)
 	cmd := exec.Command("git", "commit", "-m", fmt.Sprintf("%q", commitMessage))
-	cmd.Dir = RepoRoot
+	cmd.Dir = conf.RepoRoot
 	if out, err := cmd.CombinedOutput(); err != nil {
 		log.Println("[gitCommitAndPush] exec.Command Error", err)
 		return
@@ -185,7 +191,7 @@ func gitCommitAndPush() {
 	}
 
 	cmd = exec.Command("git", "push")
-	cmd.Dir = RepoRoot
+	cmd.Dir = conf.RepoRoot
 	if out, err := cmd.CombinedOutput(); err != nil {
 		log.Println("[gitCommitAndPush] exec.Command Error", err)
 		return
@@ -206,13 +212,13 @@ func handleWorkerEnd(run *SolverRun) {
 		} else if !json.Valid(stdout) {
 			log.Println("Invalid JSON output:", string(stdout))
 		} else {
-			filePath := path.Join(RepoRoot, "solutions", run.SolutionFileName)
+			filePath := path.Join(conf.RepoRoot, "solutions", run.SolutionFileName)
 			err := os.WriteFile(filePath, stdout, 0644)
 			if err != nil {
 				log.Println("os.WriteFile Error:", err, filePath)
 			} else {
 				log.Println("Saved:", filePath)
-				if AutoCommit {
+				if conf.AutoCommit {
 					gitAdd(run.SolutionFileName)
 				}
 			}
@@ -229,17 +235,17 @@ func fileExists(filename string) bool {
 }
 
 func mainRun() {
-	ctx, cancel := context.WithTimeout(context.Background(), TimeoutEntire)
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TimeoutEntire)
 	defer cancel()
 
 	runsMtx.Lock()
 	for _, problemID := range ProblemIDs {
 		actionSuffix := ""
-		if ActionID != "" {
-			actionSuffix = "_" + ActionID
+		if conf.ActionID != "" {
+			actionSuffix = "_" + conf.ActionID
 		}
-		solutionFileName := fmt.Sprintf("%d-%s%s.json", problemID, SolverName, actionSuffix)
-		solutionFilePath := path.Join(RepoRoot, "solutions", solutionFileName)
+		solutionFileName := fmt.Sprintf("%d-%s%s.json", problemID, conf.SolverName, actionSuffix)
+		solutionFilePath := path.Join(conf.RepoRoot, "solutions", solutionFileName)
 		if fileExists(solutionFilePath) {
 			log.Println(solutionFileName, "already exists. skip execution.")
 			continue
@@ -247,9 +253,9 @@ func mainRun() {
 
 		run := &SolverRun{
 			ProblemID:        problemID,
-			SolverPath:       SolverPath,
+			SolverPath:       conf.SolverPath,
 			Args:             nil,
-			Timeout:          TimeoutPerProblem,
+			Timeout:          conf.TimeoutPerProblem,
 			SolutionFileName: solutionFileName,
 			OnFinish:         handleWorkerEnd,
 		}
@@ -257,8 +263,8 @@ func mainRun() {
 	}
 	runsMtx.Unlock()
 
-	sema := make(chan bool, MaxParallel)
-	for i := 0; i < MaxParallel; i++ {
+	sema := make(chan bool, conf.MaxParallel)
+	for i := 0; i < conf.MaxParallel; i++ {
 		sema <- true
 	}
 
@@ -268,7 +274,7 @@ func mainRun() {
 	for {
 		select {
 		case <-ticker.C:
-			if AutoCommit {
+			if conf.AutoCommit {
 				gitCommitAndPush()
 			}
 
@@ -296,92 +302,30 @@ func mainRun() {
 			}
 			log.Println("Waiting all solver to stop")
 			wg.Wait()
-			if AutoCommit {
+			if conf.AutoCommit {
 				gitCommitAndPush()
 			}
 			log.Println("Complete")
 			return
 		}
 	}
-
 }
 
-func main() {
-	log.Println("Runner Started")
-
-	RepoRoot = os.Getenv("REPO_ROOT")
-	if RepoRoot == "" {
-		fmt.Println("env REPO_ROOT must be set")
-		os.Exit(1)
-	}
-
-	SolverName = os.Getenv("SOLVER_NAME")
-	if SolverName == "" {
-		fmt.Println("env SOLVER_NAME must be set")
-		os.Exit(1)
-	}
-
-	SolverPath = os.Getenv("SOLVER_PATH")
-	if SolverPath == "" {
-		fmt.Println("env SOLVER_PATH must be set")
-		os.Exit(1)
-	}
-
-	ActionID = os.Getenv("ACTION_ID")
-	OutputDir = os.Getenv("OUTPUT_DIR")
-	if OutputDir == "" {
-		OutputDir = "./output"
-	}
-
-	TimeoutEntire = time.Hour
-	if os.Getenv("TIMEOUT_ENTIRE") != "" {
-		d, err := time.ParseDuration(os.Getenv("TIMEOUT_ENTIRE"))
-		if err != nil {
-			log.Fatal("TIMEOUT_ENTIRE", err)
-		}
-		TimeoutEntire = d
-	}
-
-	TimeoutPerProblem = time.Minute
-	if os.Getenv("TIMEOUT_PER_PROBLEM") != "" {
-		d, err := time.ParseDuration(os.Getenv("TIMEOUT_PER_PROBLEM"))
-		if err != nil {
-			log.Fatal("TIMEOUT_PER_PROBLEM", err)
-		}
-		TimeoutPerProblem = d
-	}
-
-	MaxParallel = 4
-	if os.Getenv("MAX_P") != "" {
-		n, err := strconv.Atoi(os.Getenv("MAX_P"))
-		if err != nil {
-			log.Fatal("MAX_P", err)
-		}
-		if 0 < n && n <= 20 {
-			MaxParallel = n
-		}
-	}
-
-	targetIDs := "1-10"
-	if os.Getenv("PROBLEM_IDS") != "" {
-		targetIDs = os.Getenv("PROBLEM_IDS")
-	}
-
-	s := strings.TrimSpace(targetIDs)
-	for _, e := range strings.Split(s, " ") {
+func parseProblemIDRange() {
+	for _, e := range strings.Split(conf.ProblemIDRange, " ") {
 		if strings.Contains(e, "-") {
-			ab := strings.SplitN(s, "-", 2)
+			ab := strings.SplitN(e, "-", 2)
 			a, err := strconv.Atoi(ab[0])
 			if err != nil {
-				log.Fatal("PROBLEM_IDS a-b", err, s)
+				log.Fatal("PROBLEM_IDS a-b", err, e)
 			}
 			b, err := strconv.Atoi(ab[1])
 			if err != nil {
-				log.Fatal("PROBLEM_IDS a-b", err, s)
+				log.Fatal("PROBLEM_IDS a-b", err, e)
 			}
 			if a > b {
 				if err != nil {
-					log.Fatal("PROBLEM_IDS a>b", err, s)
+					log.Fatal("PROBLEM_IDS a>b", err, e)
 				}
 			}
 
@@ -391,29 +335,45 @@ func main() {
 		} else {
 			a, err := strconv.Atoi(e)
 			if err != nil {
-				log.Fatal("PROBLEM_IDS a", err, s)
+				log.Fatal("PROBLEM_IDS a", err, e)
 			}
 			ProblemIDs = append(ProblemIDs, a)
 		}
 	}
+}
 
-	AutoCommit = false
-	if os.Getenv("AUTO_COMMIT") != "" {
-		AutoCommit = os.Getenv("AUTO_COMMIT") != "0" && os.Getenv("AUTO_COMMIT") != "no"
+func main() {
+	log.Println("Runner Started")
+
+	if err := env.Parse(&conf); err != nil {
+		log.Fatal("%+v\n", err)
+	}
+	parseProblemIDRange()
+
+	log.Println("==========")
+	log.Println("RepoRoot", conf.RepoRoot)
+	log.Println("SolverName", conf.SolverName)
+	log.Println("SolverPath", conf.SolverPath)
+	log.Println("ActionID", conf.ActionID)
+	log.Println("OutputDir", conf.OutputDir)
+	log.Println("MaxParallel", conf.MaxParallel)
+	log.Println("TimeoutEntire", conf.TimeoutEntire)
+	log.Println("TimeoutPerProblem", conf.TimeoutPerProblem)
+	log.Println("ProblemIDs", ProblemIDs)
+	log.Println("AutoCommit", conf.AutoCommit)
+	log.Println("==========")
+
+	if conf.RepoRoot == "" {
+		log.Fatal("RepoRoot is not set")
+	}
+	if conf.SolverPath == "" {
+		log.Fatal("SolverPath is not set")
+	}
+	if conf.SolverName == "" {
+		log.Fatal("SolverName is not set")
 	}
 
-	log.Println("==========")
-	log.Println("RepoRoot", RepoRoot)
-	log.Println("ActionID", ActionID)
-	log.Println("OutputDir", OutputDir)
-	log.Println("MaxParallel", MaxParallel)
-	log.Println("TimeoutEntire", TimeoutEntire)
-	log.Println("TimeoutPerProblem", TimeoutPerProblem)
-	log.Println("ProblemIDs", ProblemIDs)
-	log.Println("AutoCommit", AutoCommit)
-	log.Println("==========")
-
-	err := os.MkdirAll(OutputDir, 0755)
+	err := os.MkdirAll(conf.OutputDir, 0755)
 	if err != nil {
 		log.Fatalf("os.MkdirAll: %s", err)
 	}
