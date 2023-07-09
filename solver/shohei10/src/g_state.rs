@@ -251,20 +251,28 @@ impl GridCache {
             if error < 0.0 {
                 iy += ystep;
                 if iy < 0 || iy >= h {
+                    self.sights[index].insert(attendee, problem.attendees[attendee].distance2(center));
                     break;
                 }
                 let filled = if steep { self.update_crossing(state, problem, index, attendee, center, iy, ix, is_erase) } else { self.update_crossing(state, problem, index, attendee, center, ix, iy, is_erase) };
-                if filled { break; }
+                if filled { 
+                    self.sights[index].remove(&attendee);
+                    break; 
+                }
                 error += dx;
             }
             
             ix += inc;
             if ix < 0 || ix >= w {
+                self.sights[index].insert(attendee, problem.attendees[attendee].distance2(center));
                 break;
             }
 
             let filled = if steep { self.update_crossing(state, problem, index, attendee, center, iy, ix, is_erase) } else { self.update_crossing(state, problem, index, attendee, center, ix, iy, is_erase) };
-            if filled { break; }
+            if filled { 
+                self.sights[index].remove(&attendee);
+                break; 
+            }
             error -= dy;
         }
     }

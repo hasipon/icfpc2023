@@ -25,6 +25,13 @@ pub struct Attendee {
     pub y:f64,
     pub tastes:Vec<f64>
 }
+impl Attendee {
+	pub fn distance2(&self, point:Point) -> f64 {
+		let dx = self.x - point.x;
+		let dy = self.y - point.y;
+		dx * dx + dy * dy
+	}
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Answer {
