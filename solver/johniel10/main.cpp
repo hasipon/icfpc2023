@@ -156,7 +156,7 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
             }
         }
     }
-    double score = 0;
+    lli score = 0;
     for (auto& a : problem.attendees) {
         for (unsigned i = 0; i < placements.size(); i++) {
             auto [x, y] = placements[i];
