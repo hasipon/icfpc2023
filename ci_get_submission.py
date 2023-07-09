@@ -44,6 +44,10 @@ def main():
                 os.remove(submission)
                 print(f"got 404. remove submission file {submission}")
                 continue
+            if e.code == 401:
+                os.remove(submission)
+                print(f"got 401. remove submission file {submission}")
+                continue
             if 500 <= e.code:
                 print(f"got {e.code}. exit program for now")
                 return
