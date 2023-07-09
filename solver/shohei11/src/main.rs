@@ -11,7 +11,6 @@ use data::*;
 use s_state::*;
 use g_state::*;
 use std::{fs, env};
-use rand::Rng;
 use chrono::prelude::*;
 
 
@@ -19,7 +18,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let timestamp = Utc::now().timestamp();
 
     let args: Vec<String> = env::args().collect();
-    let id = if args.len() <= 1 { "81" } else { &args[1] };
+    let id = if args.len() <= 1 { "9" } else { &args[1] };
     solve(id, timestamp)?;
 
     Ok(())
@@ -42,7 +41,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
 
     // ランダムに配置する
     let mut grid_state = GridState::new(&problem);
-    let mut placements = grid_state.init_random_grid(&problem, &rng);
+    let (mut placements, mut grid_cache) = grid_state.init_random_grid(&problem, &mut rng);
 
     println!("{}", placements.len());
     let mut swap_state = SwapState::new(&problem);
@@ -53,12 +52,20 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         swap_state = SwapState::new(&problem);
     
         println!("{}: g{}:{}", index, i, s_eval(&problem, &placements, &mut volumes, &mut swap_state));
-        try_grid_move(&problem, &mut placements, &mut rng);
+        grid_state.try_grid_move(&problem, &mut placements, &mut grid_cache);
+        swap_state = SwapState::new(&problem);
     }
 
     println!("{}: last:{}", index, s_eval(&problem, &placements, &mut volumes, &mut swap_state));
     try_swap(&problem, &mut placements, &mut rng, &mut swap_state);
     swap_state = SwapState::new(&problem);
+    println!("{}: last:{}", index, s_eval(&problem, &placements, &mut volumes, &mut swap_state));
+    try_swap(&problem, &mut placements, &mut rng, &mut swap_state);
+    swap_state = SwapState::new(&problem);
+    println!("{}: last:{}", index, s_eval(&problem, &placements, &mut volumes, &mut swap_state));
+    try_swap(&problem, &mut placements, &mut rng, &mut swap_state);
+    swap_state = SwapState::new(&problem);
+    
     
     let score = s_eval(&problem, &placements, &mut volumes, &mut swap_state);
     println!("{}:{}", index, score);

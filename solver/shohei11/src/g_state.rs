@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::collections::{HashMap, HashSet};
+use std::ops::Index;
 
 use rand::Rng;
 
@@ -79,16 +80,16 @@ impl GridState {
         result        
     } 
     
-    pub fn try_grid_move(&self, problem:&Problem, placements:&Vec<Point>) -> Vec<Point> {
-        let mut result: Vec<Point> = Vec::new();
-        let mut cache = GridCache::new(self, problem);
-        for i in 0..problem.musicians.len()
+    pub fn try_grid_move(&self, problem:&Problem, placements:&mut Vec<Point>, cache:&mut GridCache) {
+        for i in 0..placements.len()
         {
-            let best = self.find_best(problem, &result, i, &mut cache);
-            cache.add(&self, &problem, &result, best.0, best.1,i);
-            result.push(best.0.to_point(&self));
+            //println!("{}/{}", i, placements.len());
+            cache.remove(&self, &problem, &placements, i);
+            let best = self.find_best(problem, &placements, i, cache);
+            //println!("{:?} {:?}", placements[i], best.0.to_point(&self));
+            placements[i] = best.0.to_point(&self);
+            cache.add(&self, &problem, &placements, best.0, best.1,i);
         }
-        result
     }
 
     pub fn find_best(&self, problem:&Problem, placements:&Vec<Point>, index:usize, cache:&mut GridCache) -> (P, Vec<Sight>) {
@@ -104,7 +105,7 @@ impl GridState {
                     continue;
                 }
                 let mut score = 0.0;
-                let sights = resolve_sight(problem, &SightMode::Placements(placements), center);
+                let sights = resolve_sight(problem, &SightMode::Placements(placements, index), center);
 
                 for sight in &sights {
                     let a = &problem.attendees[sight.attendee];
@@ -127,11 +128,12 @@ impl GridState {
                     }
                     score *= q;
                 }
+
                 for crossing in &cache.crossing[p.to_index(self) as usize] {
                     if let Some(d2) =  cache.sights[crossing.m].get(&crossing.a)
                     {
                         let a = &problem.attendees[crossing.a];
-                        score -= 1000000.0 * a.tastes[problem.musicians[index]] / d2;
+                        score -= 100000.0 * a.tastes[problem.musicians[crossing.m]] / d2;
                     }
                 }
 
@@ -145,10 +147,11 @@ impl GridState {
         (best, best_sights)
     }
 
-    pub fn init_random_grid<R:Rng>(&mut self, problem:&Problem, rng:&mut R) -> Vec<Point> {
+    pub fn init_random_grid<R:Rng>(&mut self, problem:&Problem, rng:&mut R) -> (Vec<Point>, GridCache) {
         let mut set = HashSet::new();
         let mut result: Vec<Point> = Vec::new();
-        for _ in &problem.musicians
+        let mut cache = GridCache::new(self, problem);
+        for i in 0..problem.musicians.len()
         {
             loop {
                 let x = rng.gen_range(0..self.w);
@@ -157,16 +160,16 @@ impl GridState {
                 if !set.contains(&key)
                 {
                     set.insert(key);
-                    let p = Point { 
-                        x: self.x + (x as f64 * self.scale_x) + 5.0, 
-                        y: self.y + (y as f64 * self.scale_y) + 5.0,
-                    };
-                    result.push(p);
+                    let p = P {x, y};
+                    let point = p.to_point(self);
+                    let sights = resolve_sight(&problem, &SightMode::Init, point);
+                    cache.add(&self, &problem, &result, p, sights, i);
+                    result.push(point);
                     break;
                 }
             }
         }
-        result
+        (result, cache)
     }
 
     fn to_point(&self, placement:&Point) -> P {
@@ -219,6 +222,23 @@ impl GridCache {
             self.update_sight(state, problem, point, index, sight.attendee, false);
         }
     }
+    pub fn remove(&mut self, state:&GridState, problem:&Problem, placements:&Vec<Point>, index:usize) {
+        let p = state.to_point(&placements[index]);
+        self.filled.remove(&p.to_index(state));
+        
+        // 自分から生えている線を削除
+        for sight in std::mem::replace(&mut self.sights[index], HashMap::new())
+        {
+            self.update_sight(state, problem, p, index, sight.0, true);
+        }
+
+        // 交差済みの線を再描画
+        let redraw_targets = std::mem::replace(&mut self.crossing[p.to_index(state) as usize], HashSet::new());
+        for crossing in &redraw_targets
+        {
+            self.update_sight(state, problem, state.to_point(&placements[crossing.m]), crossing.m, crossing.a, false);
+        }
+    }
     pub fn update_sight(&mut self, state:&GridState, problem:&Problem, point:P, index:usize, attendee:usize, is_erase:bool) {
         
         // ブレゼンハムのアルゴリズム
@@ -252,20 +272,28 @@ impl GridCache {
             if error < 0.0 {
                 iy += ystep;
                 if iy < 0 || iy >= h {
+                    self.sights[index].insert(attendee, problem.attendees[attendee].distance2(center));
                     break;
                 }
                 let filled = if steep { self.update_crossing(state, problem, index, attendee, center, iy, ix, is_erase) } else { self.update_crossing(state, problem, index, attendee, center, ix, iy, is_erase) };
-                if filled { break; }
+                if filled { 
+                    self.sights[index].remove(&attendee);
+                    break; 
+                }
                 error += dx;
             }
             
             ix += inc;
             if ix < 0 || ix >= w {
+                self.sights[index].insert(attendee, problem.attendees[attendee].distance2(center));
                 break;
             }
 
             let filled = if steep { self.update_crossing(state, problem, index, attendee, center, iy, ix, is_erase) } else { self.update_crossing(state, problem, index, attendee, center, ix, iy, is_erase) };
-            if filled { break; }
+            if filled { 
+                self.sights[index].remove(&attendee);
+                break; 
+            }
             error -= dy;
         }
     }
@@ -311,7 +339,7 @@ impl P {
 
 enum SightMode<'a> {
     Init,
-    Placements(&'a Vec<Point>),
+    Placements(&'a Vec<Point>, usize),
 }
 
 fn resolve_sight(problem:&Problem, mode:&SightMode, center:Point) -> Vec<Sight> {
@@ -321,11 +349,12 @@ fn resolve_sight(problem:&Problem, mode:&SightMode, center:Point) -> Vec<Sight> 
     
     match mode {
         &SightMode::Init => {},
-        &SightMode::Placements(placements) => {
+        &SightMode::Placements(placements, index) => {
             
             // ミュージシャンのふちを追加
             for (i, p) in placements.iter().enumerate()
             {
+                if i == index { continue; }
                 if *p == center { continue; }
                 let dx = p.x - center.x;
                 let dy = p.y - center.y;
