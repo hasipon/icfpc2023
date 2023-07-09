@@ -17,6 +17,7 @@ visualizer_url = "http://35.221.99.118/repo/visualizer"
 static_path = pathlib.Path(__file__).resolve().parent / 'static'
 repo_path = pathlib.Path(__file__).resolve().parent.parent
 ideal_tsv_path = repo_path / "ideal.tsv"
+heatmap_path = repo_path / "heatmap"
 problems_path = repo_path / "problem.json"
 solutions_path = repo_path / "solutions"
 app = Flask(__name__, static_folder=str(static_path), static_url_path='')
@@ -95,7 +96,13 @@ class Problem:
 
     @property
     def svg_path(self) -> str:
-        return "/" + prepare_problem_svg(self.id)
+        p = prepare_problem_svg(self.id)
+        return "/" + p if p else ""
+
+    @property
+    def heatmap_image_path(self) -> str:
+        p = prepare_heatmap_image(self.id)
+        return "/" + p if p else ""
 
     @property
     def diff_ideal_score(self) -> float:
@@ -223,6 +230,43 @@ def prepare_solution_svg(problem_id, solution_name):
         except Exception as e:
             print(e)
     return svg
+
+
+def gen_heatmap_image(p_js, heatmap):
+    g_stage = dw.Group(id="stage", fill='none', transform='scale(1,-1)')
+    g_stage.append(dw.Rectangle(0, 0, p_js["stage_width"], p_js["stage_height"], fill='white'))
+    min_score = max(x[0] for x in heatmap)
+    max_score = min(x[0] for x in heatmap)
+    s, l = 100, 50
+    for e in heatmap:
+        score, x, y = e
+        scaled = (score - min_score) / (max_score - min_score)
+        h = (1-scaled) * 360
+        g_stage.append(dw.Rectangle(x - p_js["stage_bottom_left"][0],
+                                    y - p_js["stage_bottom_left"][1],
+                                    10, 10, fill=f'hsl({h}, {s}%, {l}%)'))
+    d = dw.Drawing(p_js["stage_width"], p_js["stage_height"], id_prefix='id')
+    d.append(dw.Use(g_stage, 0, p_js["stage_height"]))
+    return d
+
+
+def prepare_heatmap_image(problem_id):
+    file_name = f"{problem_id}-heatmap.svg"
+    if os.path.exists(static_path / file_name) and not problem_id < 3:
+        return file_name
+    try:
+        if not os.path.exists(heatmap_path / f"{problem_id}.csv"):
+            return None
+        with open(heatmap_path / f"{problem_id}.csv") as f:
+            heatmap = [(float(row[0]), float(row[1]), float(row[2])) for row in csv.reader(f) if len(row) == 3]
+        if not heatmap:
+            return None
+        p_js = get_problem_json(problem_id)
+        gen_heatmap_image(p_js, heatmap).save_svg(str(static_path / file_name))
+    except Exception as e:
+        print(e)
+        return None
+    return file_name
 
 
 def get_ideal_scores() -> Dict[int, float]:
