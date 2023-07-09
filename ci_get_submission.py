@@ -36,13 +36,17 @@ def main():
         with open(submission) as f:
             submission_id = f.read().strip()
 
-        time.sleep(1.0)
+        time.sleep(0.33)
         try:
             response = get_submission(submission_id).strip("\"")
         except urllib.error.HTTPError as e:
             if e.code == 404:
                 os.remove(submission)
                 print(f"got 404. remove submission file {submission}")
+                continue
+            if e.code == 401:
+                os.remove(submission)
+                print(f"got 401. remove submission file {submission}")
                 continue
             if 500 <= e.code:
                 print(f"got {e.code}. exit program for now")

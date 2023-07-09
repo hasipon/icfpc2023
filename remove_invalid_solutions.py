@@ -30,16 +30,19 @@ def main():
 
             if "placements" not in js:
                 print("found invalid json:", solution, "content:", s)
+                remove_solution(solution)
                 continue
 
             for p in js["placements"]:
                 if "x" not in p or "y" not in p:
                     print("found invalid json:", solution, "content:", s)
-                    continue
+                    remove_solution(solution)
+                    break
 
                 elif p["x"] is None or p["y"] is None:
                     print("found invalid json:", solution, "content:", s)
-                    continue
+                    remove_solution(solution)
+                    break
 
 
 if __name__ == "__main__":
