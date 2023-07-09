@@ -56,7 +56,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
 
     let answer:Answer = Answer { placements };
     let answer_string = serde_json::to_string(&answer)?;
-    let name = "shohei8-3";
+    let name = "shohei8-4";
     fs::write(
         format!("../../solutions/{}-{}.json", index, name), 
         &answer_string
