@@ -28,7 +28,8 @@ pub struct Attendee {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Answer {
-    pub placements:Vec<Point>
+    pub placements:Vec<Point>,
+	pub volumes:Vec<f64>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq)]
