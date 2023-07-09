@@ -82,29 +82,33 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let mut max_score = init_score;
     let mut max_result = best.placements;
 
-    for i in 2..500
+    for j in 1..5 
     {
-        let mut placements = max_result.clone();
-        randomize(&mut placements, &problem, 100.0 / i as f64, i as f64, &mut rng);
-        if rng.gen_bool(0.1) {
-            pull_placements(&mut placements, &problem, 0.1);
-        }
-        for _ in 0..2000
+        for i in 1..100 * j
         {
-            if separate_placements(x, y, w, h, &mut placements, &mut rng) {
-                break;
+            let mut placements = max_result.clone();
+            while !randomize(&mut placements, &problem, 3000.0 / i as f64, i as f64, &mut rng)
+            {
+            }
+            if rng.gen_bool(0.1) {
+                pull_placements(&mut placements, &problem, 0.1);
+            }
+            for _ in 0..2000
+            {
+                if separate_placements(x, y, w, h, &mut placements, &mut rng) {
+                    break;
+                }
+            }
+            let score = s_eval(&problem, &placements, &mut volumes);
+            if score > max_score
+            {
+                max_score = score;
+                max_result = placements;
+                println!("up: {} {} {},{}:{} {} ", index, best_name, j, i, score, (score - init_score) / init_score);
             }
         }
-        let score = s_eval(&problem, &placements, &mut volumes);
-        if score > max_score
-        {
-            max_score = score;
-            max_result = placements;
-            println!("up: {} {} {}:{} {} ", index, best_name, i, score, (score - init_score) / init_score);
-        }
     }
-
-    if max_score > init_score
+    if max_score > init_score * 1.001
     {
         let score = s_eval(&problem, &max_result, &mut volumes);
         println!("end: {} {}:{} {} ", index, best_name, score, (score - init_score) / init_score);
@@ -114,7 +118,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         {
             best_name.remove(0); 
         }
-        let name = format!("shohei14-2-{}-{}", seed, best_name);
+        let name = format!("shohei14-3-{}-{}", seed, best_name);
         fs::write(
             format!("../../solutions/{}-{}", index, name), 
             &answer_string
@@ -133,16 +137,19 @@ fn randomize<R:Rng>(
     problem:&Problem,
     power:f64,
     rate:f64,
-    rng:&mut R) {
+    rng:&mut R) -> bool {
 
-    let rate = (rng.gen_range(0.000001..0.005) * rate).min(1.0);
+    let mut changed = false;
+    let rate = (rng.gen_range(0.000001..0.0002) * rate).min(1.0);
     for i in 0..placements.len()
     {
         if rng.gen_bool(rate) {
             placements[i].x += rng.gen_range(-power..power);
             placements[i].y += rng.gen_range(-power..power);
+            changed = true;
         }
     }
+    changed
 }
 fn pull_placements(
     placements:&mut Vec<Point>,
