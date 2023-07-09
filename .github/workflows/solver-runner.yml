@@ -37,7 +37,7 @@ jobs:
       - name: run
         run: cd runner && go run main.go
         env:
-          REPO_ROOT: ${{ env.GITHUB_WORKSPACE }}
+          REPO_ROOT: ${{ github.workspace }}
           SOLVER_PATH: ${{ github.event.inputs.solver-path }}
           SOLVER_NAME: ${{ github.event.inputs.solver-name }}
           PROBLEM_IDS: ${{ github.event.inputs.problem-ids }}
