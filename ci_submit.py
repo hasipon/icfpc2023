@@ -1,6 +1,7 @@
 import os
 import glob
 import json
+import time
 import urllib.request
 import urllib.parse
 
@@ -33,13 +34,21 @@ def main():
     print(solutions_not_submitted)
 
     for solution in solutions_not_submitted:
+        time.sleep(1.0)
         problem_id = os.path.basename(solution).split("-", 1)[0]
         with open(solution) as f:
             contents = f.read()
-            response = submit(problem_id, contents)
-            with open('{}.submission'.format(solution), mode="w") as subfile:
-                subfile.write(response.strip("\""))
-                subfile.write("\n")
+            try:
+                response = submit(problem_id, contents)
+            except urllib.error.HTTPError as e:
+                if 500 <= e.code:
+                    print(f"got {e.code}. exit program for now")
+                    return
+                raise
+            else:
+                with open('{}.submission'.format(solution), mode="w") as subfile:
+                    subfile.write(response.strip("\""))
+                    subfile.write("\n")
 
 
 if __name__ == "__main__":
