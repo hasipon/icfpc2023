@@ -262,7 +262,7 @@ bool checkPlacements(double x, double y, const vector<pair<double, double>>& pla
 pair<bool, long long> calcScoreWithCache(
     const Problem& problem,
     const vector<pair<double, double>>& placements,
-	map<pair<double, double>, vector<double>>& cache,
+    map<pair<double, double>, vector<double>>& cache,
     bool ignore_factor
     ) {
 
@@ -287,19 +287,19 @@ pair<bool, long long> calcScoreWithCache(
         }
     }
 
-	vector<double> factor(placements.size(), 1);
-	if (!ignore_factor && !problem.pillars.empty()) {
-		for (unsigned i = 0; i < placements.size(); i++) {
-			auto [x1, y1] = placements[i];
-			for (unsigned j = 0; j < placements.size(); j++) {
-				if (j != i && problem.musicians[i] == problem.musicians[j]) {
-					auto [x2, y2] = placements[j];
-					auto d2 = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
-					factor[i] += 1 / sqrt(d2);
-				}
-			}
-		}
-	}
+    vector<double> factor(placements.size(), 1);
+    if (!ignore_factor && !problem.pillars.empty()) {
+        for (unsigned i = 0; i < placements.size(); i++) {
+            auto [x1, y1] = placements[i];
+            for (unsigned j = 0; j < placements.size(); j++) {
+                if (j != i && problem.musicians[i] == problem.musicians[j]) {
+                    auto [x2, y2] = placements[j];
+                    auto d2 = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
+                    factor[i] += 1 / sqrt(d2);
+                }
+            }
+        }
+    }
 
     if (cache.empty()) {
         for (unsigned i = 0; i < placements.size(); i++) {
@@ -307,46 +307,46 @@ pair<bool, long long> calcScoreWithCache(
                 cache[placements[i]].resize(problem.attendees[0].tastes.size());
             }
         }
-		for (auto& a : problem.attendees) {
-			for (unsigned i = 0; i < placements.size(); i++) {
-				auto [x, y] = placements[i];
-				for (unsigned j = 0; j < placements.size(); j++) {
-					if (i != j) {
-						auto [x2, y2] = placements[j];
-						if (isBlocked(a.x, a.y, x, y, x2, y2, 5)) {
-							goto next;
-						}
-					}
-				}
-				for (auto pr : problem.pillars) {
-					if (isBlocked(a.x, a.y, x, y, pr.x, pr.y, pr.r)) {
-						goto next;
-					}
-				}
+        for (auto& a : problem.attendees) {
+            for (unsigned i = 0; i < placements.size(); i++) {
+                auto [x, y] = placements[i];
+                for (unsigned j = 0; j < placements.size(); j++) {
+                    if (i != j) {
+                        auto [x2, y2] = placements[j];
+                        if (isBlocked(a.x, a.y, x, y, x2, y2, 5)) {
+                            goto next;
+                        }
+                    }
+                }
+                for (auto pr : problem.pillars) {
+                    if (isBlocked(a.x, a.y, x, y, pr.x, pr.y, pr.r)) {
+                        goto next;
+                    }
+                }
 
-				for (unsigned t = 0; t < a.tastes.size(); t++)
-				{
-					const auto d2 = (a.x - x) * (a.x - x) + (a.y - y) * (a.y - y);
-					auto s = (long long)ceil(1000000 * a.tastes[t] / d2);
-					cache[placements[i]][t] += s;
-				}
-			next:;
-			}
-		}
+                for (unsigned t = 0; t < a.tastes.size(); t++)
+                {
+                    const auto d2 = (a.x - x) * (a.x - x) + (a.y - y) * (a.y - y);
+                    auto s = (long long)ceil(1000000 * a.tastes[t] / d2);
+                    cache[placements[i]][t] += s;
+                }
+            next:;
+            }
+        }
     }
 
     double score = 0;
-	for (unsigned i = 0; i < placements.size(); i++) {
+    for (unsigned i = 0; i < placements.size(); i++) {
         if (cache.find(placements[i]) == cache.end()) {
             cerr << "Broken cache" << endl;
             throw 1;
         }
         auto s = cache[placements[i]][problem.musicians[i]];
-		if (factor[i] > 1) {
-			s = (long long)ceil(factor[i] * s); // NOLINT(cppcoreguidelines-narrowing-conversions)
-		}
+        if (factor[i] > 1) {
+            s = (long long)ceil(factor[i] * s); // NOLINT(cppcoreguidelines-narrowing-conversions)
+        }
         score += s;
-	}
+    }
 
     return { true,score };
 }
@@ -365,11 +365,11 @@ long long swapDeltaScore(
     }
 
     double score = 0;
-	score -= cache[placements[swap_i]][problem.musicians[swap_i]];
-	score -= cache[placements[swap_j]][problem.musicians[swap_j]];
+    score -= cache[placements[swap_i]][problem.musicians[swap_i]];
+    score -= cache[placements[swap_j]][problem.musicians[swap_j]];
 
-	score += cache[placements[swap_i]][problem.musicians[swap_j]];
-	score += cache[placements[swap_j]][problem.musicians[swap_i]];
+    score += cache[placements[swap_i]][problem.musicians[swap_j]];
+    score += cache[placements[swap_j]][problem.musicians[swap_i]];
     return score;
 }
 
@@ -382,16 +382,16 @@ vector<pair<double, double>> solve(const Problem& problem) {
     auto score = res.second;
     for (int ite = 0; ite < 10; ite++) {
         bool updated = false;
-		for (int i = 0; i < placements.size(); i++) {
-			for (int j = i + 1; j < placements.size(); j++) {
+        for (int i = 0; i < placements.size(); i++) {
+            for (int j = i + 1; j < placements.size(); j++) {
                 auto ds = swapDeltaScore(problem, placements, cache, false, i, j);
                 if (0 < ds) {
                     score += ds;
-					std::swap(placements[i], placements[j]);
+                    std::swap(placements[i], placements[j]);
                     updated = true;
                 }
-			}
-		}
+            }
+        }
         cerr << "score:" << score << endl;
         if (!updated) {
             break;
@@ -444,7 +444,7 @@ int main(int argc, char* argv[]) {
     Problem problem;
     {
         ifstream ifs("../../problems.kyopro/" + to_string(problem_id) + ".kyopro");
-		readProblem(ifs, problem);
+        readProblem(ifs, problem);
     }
 #else
 
@@ -459,7 +459,7 @@ int main(int argc, char* argv[]) {
     writePlacementsJSON(cout, placement);
 #if LOCAL_DEBUG
     {
-		ofstream ofs(to_string(problem_id) + "-inada1-" + to_string(res.second) + ".json");
+        ofstream ofs(to_string(problem_id) + "-inada1-" + to_string(res.second) + ".json");
         writePlacementsJSON(ofs, placement);
     }
 #endif
