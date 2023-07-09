@@ -82,15 +82,15 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let mut max_score = init_score;
     let mut max_result = best.placements;
 
-    for j in 1..5 
+    for j in 1..20
     {
-        for i in 1..100 * j
+        for i in 1..40 * j
         {
             let mut placements = max_result.clone();
-            while !randomize(&mut placements, &problem, 3000.0 / i as f64, i as f64, &mut rng)
+            while !randomize(&mut placements, &problem, 300.0 / i as f64, i as f64, &mut rng)
             {
             }
-            if rng.gen_bool(0.1) {
+            if rng.gen_bool(0.02) {
                 pull_placements(&mut placements, &problem, 0.1);
             }
             for _ in 0..2000
@@ -140,7 +140,7 @@ fn randomize<R:Rng>(
     rng:&mut R) -> bool {
 
     let mut changed = false;
-    let rate = (rng.gen_range(0.000001..0.0002) * rate).min(1.0);
+    let rate = (rng.gen_range(0.000001..0.0003) * rate).min(1.0);
     for i in 0..placements.len()
     {
         if rng.gen_bool(rate) {
