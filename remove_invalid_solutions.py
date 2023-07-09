@@ -11,7 +11,7 @@ def load_json(s):
 
 
 def remove_solution(solution):
-    # os.remove(solution)
+    os.remove(solution)
     if os.path.exists(solution + ".submission"):
         os.remove(solution + ".submission")
     if os.path.exists(solution + ".submission.result"):
