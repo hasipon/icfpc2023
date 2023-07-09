@@ -184,8 +184,8 @@ func gitCommitAndPush() {
 	cmd := exec.Command("git", "commit", "-m", fmt.Sprintf("%q", commitMessage))
 	cmd.Dir = conf.RepoRoot
 	if out, err := cmd.CombinedOutput(); err != nil {
-		log.Println("[gitCommitAndPush] exec.Command Error", err)
-		return
+		log.Println("[gitCommitAndPush] exec.Command (git commit) Error", err)
+		// return
 	} else {
 		log.Println(string(out))
 	}
@@ -193,8 +193,8 @@ func gitCommitAndPush() {
 	cmd = exec.Command("git", "push")
 	cmd.Dir = conf.RepoRoot
 	if out, err := cmd.CombinedOutput(); err != nil {
-		log.Println("[gitCommitAndPush] exec.Command Error", err)
-		return
+		log.Println("[gitCommitAndPush] exec.Command (git push) Error", err)
+		// return
 	} else {
 		log.Println(string(out))
 	}
