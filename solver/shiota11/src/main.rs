@@ -124,7 +124,6 @@ fn coreSolveGaishu(problem:&Problem, offsetX:f64, offsetY:f64, blank:f64) -> (f6
     while(true)
     {
         let now = eval(&problem, &placements, &mut volume, &mut cache);
-        println!("now: {}, last: {}", now, lastI);
         if (now - lastI).abs() < 1. {
             break;
         }
@@ -236,7 +235,6 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     for offsetX in [0, (problem.stage_bottom_left.0 + problem.stage_width) as i64 % 10] {
         for offsetY in [0, (problem.stage_bottom_left.1 + problem.stage_height) as i64 % 10] {
             let (score, placements, volumes) = coreSolveHeat(&problem, &heat, index, offsetX as f64, offsetY as f64);
-            eprintln!("heat {}, ({}, {})", score, offsetX, offsetY);
             if score > bestScore {
                 bestScore = score;
                 bestPlacements = placements;
@@ -249,7 +247,6 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
             for b in 0..5 {
                 let (score, placements, volumes) = coreSolveGaishu(&problem, offsetX as f64, offsetY as f64, b as f64);
                 if score > bestScore {
-                    eprintln!("gaishu {}, ({}, {}, {})", score, offsetX, offsetY, b);
                     bestScore = score;
                     bestPlacements = placements;
                     bestVolumes = volumes;
