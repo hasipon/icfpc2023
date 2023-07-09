@@ -20,7 +20,8 @@ pub struct GridState {
 
 pub struct GridCache {
     pub filled  :HashMap<i32, usize>,
-    pub crossing:HashMap<i32, Vec<Pair>>,
+    pub crossing:HashMap<i32, Vec<Pair>>, // 各座標をまたぐ線
+    pub sights  :HashMap<usize /* ミュ */, usize /* 客 */>, // 通ってる視線
 }
 
 pub struct Pair {
@@ -38,8 +39,8 @@ impl GridState {
     pub fn new(problem:&Problem) -> GridState {
         let x = problem.stage_bottom_left.0 + 5.0;
         let y = problem.stage_bottom_left.1 + 5.0;
-        let width = problem.stage_width;
-        let height = problem.stage_height;
+        let width = problem.stage_width - 10.0;
+        let height = problem.stage_height - 10.0;
         let w = (width  / 10.0).floor() as i32;
         let h = (height / 10.0).floor() as i32;
         let scale_x = (width  - 10.0) / (w - 1) as f64; 
@@ -92,6 +93,8 @@ impl GridState {
     pub fn find_best(&self, problem:&Problem, placements:&Vec<Point>, index:usize, cache:&mut GridCache) -> P {
         let mut best = P {x:0, y:0};
         let mut best_score = -std::f64::INFINITY;
+        let mut sights = Vec::new();
+        
         println!("{}/{}", index, problem.musicians.len());
         for x in 0..self.w {
             for y in 0..self.h {
@@ -144,8 +147,8 @@ impl GridState {
                 {
                     set.insert(key);
                     result.push(Point { 
-                        x: self.x + (x as f64 * self.scale_x) + 0.5, 
-                        y: self.y + (y as f64 * self.scale_y) + 0.5,
+                        x: self.x + (x as f64 * self.scale_x) + 5.0, 
+                        y: self.y + (y as f64 * self.scale_y) + 5.0,
                     });
                     break;
                 }
@@ -180,8 +183,8 @@ impl GridCache {
 impl P {
     fn to_point(&self, state:&GridState) -> Point {
         Point {
-            x: state.x + self.x as f64 * state.scale_x,
-            y: state.y + self.y as f64 * state.scale_y,
+            x: state.x + self.x as f64 * state.scale_x + 5.0,
+            y: state.y + self.y as f64 * state.scale_y + 5.0,
         }
     }
     fn to_index(&self, state:&GridState) -> i32 {

@@ -28,7 +28,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let data:String = fs::read_to_string(format!("../../problem.json/{}.json", index))?; 
     let mut problem:Problem = serde_json::from_str(&data)?;
-    let mut placements = Vec::new();
     let x = problem.stage_bottom_left.0 + 10.0;  
     let y = problem.stage_bottom_left.1 + 10.0;
     let w = problem.stage_width - 20.0;
@@ -39,10 +38,11 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         problem.extention = Option::Some(());
     }
 
-    // ランダムに配置する
+    // 貪欲に配置する
     let mut grid_state = GridState::new(&problem);
-    placements = grid_state.init_grid(&problem);
-    
+    let mut placements = grid_state.init_grid(&problem);
+
+    println!("{}", placements.len());
     let mut swap_state = SwapState::new(&problem);
     for i in 0..4
     {
@@ -56,7 +56,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
 
     let answer:Answer = Answer { placements };
     let answer_string = serde_json::to_string(&answer)?;
-    let name = "shohei8-2";
+    let name = "shohei8-3";
     fs::write(
         format!("../../solutions/{}-{}.json", index, name), 
         &answer_string
