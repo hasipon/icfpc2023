@@ -80,13 +80,13 @@ impl GridState {
     } 
     
     pub fn try_grid_move(&self, problem:&Problem, placements:&Vec<Point>) -> Vec<Point> {
-        let mut result: Vec<Point> = Vec::new();
         let mut cache = GridCache::new(self, problem);
-        for i in 0..problem.musicians.len()
+        for i in 0..placements.len()
         {
             let best = self.find_best(problem, &result, i, &mut cache);
-            cache.add(&self, &problem, &result, best.0, best.1,i);
-            result.push(best.0.to_point(&self));
+            cache.remove(&self, &problem, &placements, &index);
+            placements[i] = best.0.to_point(&self);
+            cache.add(&self, &problem, &placements, best.0, best.1,i);
         }
         result
     }
