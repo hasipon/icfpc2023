@@ -104,10 +104,15 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
 }
 
 
-long long calcScore9(const Problem& problem, vector<pair<double, double>> placements, unsigned idx, int taste) {
+long long calcScore10(const Problem& problem, vector<pair<double, double>> placements, unsigned idx, int taste) {
     long long score = 0;
     auto [x, y] = placements[idx];
     for (auto& a : problem.attendees) {
+        for (auto pr : problem.pillars) {
+            if (isBlocked(a.x, a.y, x, y, pr.x, pr.y, pr.r)) {
+                goto next;
+            }
+        }
         for (unsigned j = 0; j < placements.size(); j++) {
             if (j == idx) continue;
             auto [x2, y2] = placements[j];
@@ -236,7 +241,7 @@ int main(int argc, char** argv) {
     for (auto [taste, cnt] : tasteCount) {
         cout << taste << " " << cnt << endl;
         for (unsigned idx = 0; idx < placements.size(); idx++) {
-            cout << calcScore9(problem, placements, idx, taste) << " ";
+            cout << calcScore10(problem, placements, idx, taste) << " ";
         }
         cout << endl;
     }
