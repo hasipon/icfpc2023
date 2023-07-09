@@ -369,6 +369,13 @@ func main() {
 	if conf.SolverPath == "" {
 		log.Fatal("SolverPath is not set")
 	}
+	if !fileExists(conf.SolverPath) {
+		if fileExists(path.Join(conf.RepoRoot, conf.SolverPath)) {
+			conf.SolverPath = path.Join(conf.RepoRoot, conf.SolverPath)
+		} else {
+			log.Fatal("File not exist at SolverPath", conf.SolverPath)
+		}
+	}
 	if conf.SolverName == "" {
 		log.Fatal("SolverName is not set")
 	}
