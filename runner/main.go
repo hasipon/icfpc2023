@@ -201,21 +201,22 @@ func gitCommitAndPush() {
 }
 
 func handleWorkerEnd(run *SolverRun) {
-	runsMtx.RLock()
-	defer runsMtx.RUnlock()
+	log.Printf("ProblemID:%d finished. exit:%d", run.ProblemID, run.ExitCode)
 
 	// copy solution
 	if run.StdOutPath != "" {
 		stdout, err := os.ReadFile(run.StdOutPath)
 		if err != nil {
 			log.Println("os.ReadFile(run.StdOutPath) Error:", err)
+		} else if len(stdout) == 0 {
+			log.Printf("[Problem:%d] stdout is empty", run.ProblemID)
 		} else if !json.Valid(stdout) {
-			log.Println("Invalid JSON output:", string(stdout))
+			log.Printf("[Problem:%d] stdout not JSON: %s", run.ProblemID, string(stdout))
 		} else {
 			filePath := path.Join(conf.RepoRoot, "solutions", run.SolutionFileName)
 			err := os.WriteFile(filePath, stdout, 0644)
 			if err != nil {
-				log.Println("os.WriteFile Error:", err, filePath)
+				log.Printf("[Problem:%d] os.WriteFile Error: %v File: %v", run.ProblemID, err, filePath)
 			} else {
 				log.Println("Saved:", filePath)
 				if conf.AutoCommit {
