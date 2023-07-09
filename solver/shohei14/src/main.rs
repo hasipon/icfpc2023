@@ -82,11 +82,11 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let mut max_score = init_score;
     let mut max_result = best.placements;
 
-    for i in 3..500
+    for i in 2..500
     {
         let mut placements = max_result.clone();
-        randomize(&mut placements, &problem, 10.0 / i as f64, &mut rng);
-        if rng.gen_bool(0.15) {
+        randomize(&mut placements, &problem, 100.0 / i as f64, i as f64, &mut rng);
+        if rng.gen_bool(0.1) {
             pull_placements(&mut placements, &problem, 0.1);
         }
         for _ in 0..2000
@@ -114,9 +114,9 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         {
             best_name.remove(0); 
         }
-        let name = format!("shohei14-{}-{}", seed, best_name);
+        let name = format!("shohei14-2-{}-{}", seed, best_name);
         fs::write(
-            format!("../../solutions/{}-{}.json", index, name), 
+            format!("../../solutions/{}-{}", index, name), 
             &answer_string
         )?;
         fs::write(
@@ -132,9 +132,10 @@ fn randomize<R:Rng>(
     placements:&mut Vec<Point>,
     problem:&Problem,
     power:f64,
+    rate:f64,
     rng:&mut R) {
 
-    let rate = rng.gen_range(0.02..0.4);
+    let rate = (rng.gen_range(0.000001..0.005) * rate).min(1.0);
     for i in 0..placements.len()
     {
         if rng.gen_bool(rate) {
