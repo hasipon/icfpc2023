@@ -32,7 +32,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let y = problem.stage_bottom_left.1 + 10.0;
     let w = problem.stage_width - 20.0;
     let h = problem.stage_height - 20.0;
-    let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(5);
+    let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(7);
     
     let mut volumes = vec![1.0; problem.musicians.len()];
     let iindex:i64 = index.parse()?;
@@ -46,7 +46,8 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
 
     println!("{}", placements.len());
     let mut swap_state = SwapState::new(&problem);
-    for i in 0..4
+    let count = if problem.extention.is_some() { 9 } else { 4 };
+    for i in 0..count
     {
         println!("{}: s{}:{}", index, i, s_eval(&problem, &placements, &mut volumes, &mut swap_state));
         try_swap(&problem, &mut placements, &mut rng, &mut swap_state);
@@ -60,7 +61,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
 
     let answer:Answer = Answer { placements, volumes };
     let answer_string = serde_json::to_string(&answer)?;
-    let name = "shohei12";
+    let name = "shohei12-2";
     fs::write(
         format!("../../solutions/{}-{}.json", index, name), 
         &answer_string
