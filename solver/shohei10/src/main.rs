@@ -42,7 +42,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
 
     // ランダムに配置する
     let mut grid_state = GridState::new(&problem);
-    let mut placements = grid_state.init_random_grid(&problem, &mut rng);
+    let mut placements = grid_state.init_grid(&problem);
 
     println!("{}", placements.len());
     let mut swap_state = SwapState::new(&problem);
@@ -53,8 +53,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         swap_state = SwapState::new(&problem);
     
         println!("{}: g{}:{}", index, i, s_eval(&problem, &placements, &mut volumes, &mut swap_state));
-        try_grid_move(&problem, &mut placements, &mut rng);
-    
+        //try_grid_move(&problem, &mut placements, &mut rng);
     }
 
     let score = s_eval(&problem, &placements, &mut volumes, &mut swap_state);
@@ -62,7 +61,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
 
     let answer:Answer = Answer { placements, volumes };
     let answer_string = serde_json::to_string(&answer)?;
-    let name = "shohei11";
+    let name = "shohei10-3";
     fs::write(
         format!("../../solutions/{}-{}.json", index, name), 
         &answer_string

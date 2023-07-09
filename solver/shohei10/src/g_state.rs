@@ -131,17 +131,17 @@ impl GridState {
         (best, best_sights)
     }
 
-    //pub fn init_grid(&self, problem:&Problem) -> Vec<Point> {
-    //    let mut result: Vec<Point> = Vec::new();
-    //    let mut cache = GridCache::new(self, problem);
-    //    for i in 0..problem.musicians.len()
-    //    {
-    //        let best = self.find_best(problem, &result, i, &mut cache);
-    //        cache.add(&self, &problem, &result, best.0, best.1,i);
-    //        result.push(best.0.to_point(&self));
-    //    }
-    //    result
-    //}
+    pub fn init_grid(&self, problem:&Problem) -> Vec<Point> {
+        let mut result: Vec<Point> = Vec::new();
+        let mut cache = GridCache::new(self, problem);
+        for i in 0..problem.musicians.len()
+        {
+            let best = self.find_best(problem, &result, i, &mut cache);
+            cache.add(&self, &problem, &result, best.0, best.1,i);
+            result.push(best.0.to_point(&self));
+        }
+        result
+    }
     pub fn init_random_grid<R:Rng>(&mut self, problem:&Problem, rng:&mut R) -> Vec<Point> {
         let mut set = HashSet::new();
         let mut result: Vec<Point> = Vec::new();
