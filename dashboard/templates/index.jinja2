@@ -21,16 +21,18 @@
             <tr>
                 <th class="text-center" scope="col">Problem</th>
                 <th class="text-center" scope="col">Image</th>
-                <th class="text-center" scope="col">Solutions 1st</th>
-                <th class="text-center" scope="col">Solutions 2nd</th>
+                <th class="text-center" scope="col">Solution 1st</th>
+                <th class="text-center" scope="col">Solution 2nd</th>
             </tr>
 
             {% for p in problems.values() %}
                 <tr>
                     <td class="text-center" id="{{ p.id }}">
-                        <a href="http://35.221.99.118/repo/problem.json/{{ p.id }}.json">{{ p.name }}</a>
-                        <br>
+                        <a href="http://35.221.99.118/repo/problem.json/{{ p.id }}.json">{{ p.name }}</a> <br>
                         <a href="/solutions/{{ p.id }}">回答一覧 ({{solutions[p.id] | length }} 件)</a><br>
+                        {% if p.heatmap_image_path  %}
+                            <a href={{ p.heatmap_image_path  }}>heatmap</a><br>
+                        {% endif %}
                         <span style="font-weight: bold">理論値との差</span><br>
                         {{ "%.2E" | format(p.diff_ideal_score) }} <br>
                         <br>
@@ -65,6 +67,7 @@
                             <p>No submission</p>
                         {% endif %}
                     </td>
+
                     <td class="text-center">
                         {% if 1 < solutions[p.id] | length %}
                             {{ solutions[p.id][1].name }}<br>
