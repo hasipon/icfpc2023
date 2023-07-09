@@ -26,6 +26,10 @@ pub struct Attendee {
     pub tastes:Vec<f64>
 }
 
+fn distance2() {
+	let 
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Answer {
     pub placements:Vec<Point>,
