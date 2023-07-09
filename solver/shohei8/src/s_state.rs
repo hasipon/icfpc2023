@@ -89,7 +89,7 @@ pub fn s_eval(problem:&Problem, placements:&Vec<Point>, cache:&mut SwapState) ->
 
 // 各ミュージシャンごとの観客の評価値の合算
 pub fn s_eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, total:bool, cache:&mut SwapState) -> f64 {
-    let mut nearest_d = 10000000000000000000000.0;
+    let mut nearest_d = std::f64::INFINITY;
     let mut nearest_dir = 0.0;
     let center = placements[index];
 
