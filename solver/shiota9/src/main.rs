@@ -153,25 +153,26 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
             if score > bestScore {
                 bestScore = score;
                 bestPlacements = placements;
-                println!("{}\t{}\t{}", bestScore, nowW, nowH);
+                eprintln!("{}\t{}\t{}", bestScore, nowW, nowH);
             }
             nowH = nowH + unit;
         }
         nowW = nowW + unit;
     }
-    println!("{}\t{}", bestScore, index);
+    eprintln!("{}\t{}", bestScore, index);
 
     let answer:Answer = Answer { placements: bestPlacements };
     let answer_string = serde_json::to_string(&answer)?;
     let name = "shiota9";
-    fs::write(
-        format!("../../solutions/{}-{}-{}.json", index, name,timestamp),
-        &answer_string
-    )?;
-    fs::write(
-        format!("../../solutions/{}-{}-{}.myeval", index, name, timestamp),
-        &bestScore.to_string()
-    )?;
+    println!("{}", &answer_string);
+    // fs::write(
+    //     format!("../../solutions/{}-{}-{}.json", index, name,timestamp),
+    //     &answer_string
+    // )?;
+    // fs::write(
+    //     format!("../../solutions/{}-{}-{}.myeval", index, name, timestamp),
+    //     &bestScore.to_string()
+    // )?;
 
     Ok(())
 }
@@ -183,7 +184,6 @@ fn try_bulk_swap<R:Rng>(problem:&Problem, placements:&mut Vec<Point>, rng:&mut R
             let mut scoreBefore = 0.;
             let mut scoreAfter= 0.;
             let mut swapHist = Vec::new();
-            let beforeScoreStrict = eval(problem, placements, cache);
             for i in 0 .. placements.len() {
                 if problem.musicians[i] != ti {
                     continue;
@@ -225,7 +225,7 @@ fn try_bulk_swap<R:Rng>(problem:&Problem, placements:&mut Vec<Point>, rng:&mut R
                     break;
                 }
             }
-            if beforeScoreStrict > eval(problem, placements, cache) {
+            if scoreBefore > scoreAfter {
                 swapHist.reverse();
                 for (i, j, scorei, scorej) in swapHist {
                     placements.swap(i, j);
