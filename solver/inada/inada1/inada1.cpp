@@ -1,5 +1,5 @@
-﻿#define LOCAL_DEBUG 1
-#define ENABLE_GV 1
+﻿#define LOCAL_DEBUG 0
+#define ENABLE_GV 0
 
 #include "inada1.h"
 #define GV_JS
@@ -377,30 +377,25 @@ vector<pair<double, double>> solve(const Problem& problem) {
     map<pair<double, double>, vector<double>> cache;
 
     auto placements = makeEdgePlacement(problem);
-    auto res = calcScore(problem, placements);
-    cerr << "calcScore: " << res.second << endl;
-    res = calcScoreWithCache(problem, placements, cache, false);
+    auto res = calcScoreWithCache(problem, placements, cache, false);
     cerr << "calcScoreWithCache1: " << res.second << endl;
-
-    shuffle(placements.begin(), placements.end(), g_rand);
-
-    res = calcScore(problem, placements);
-    cerr << "calcScore: " << res.second << endl;
-    res = calcScoreWithCache(problem, placements, cache, false);
-    cerr << "calcScoreWithCache2: " << res.second << endl;
-
     auto score = res.second;
     for (int ite = 0; ite < 10; ite++) {
+        bool updated = false;
 		for (int i = 0; i < placements.size(); i++) {
 			for (int j = i + 1; j < placements.size(); j++) {
                 auto ds = swapDeltaScore(problem, placements, cache, false, i, j);
                 if (0 < ds) {
                     score += ds;
 					std::swap(placements[i], placements[j]);
+                    updated = true;
                 }
 			}
 		}
         cerr << "score:" << score << endl;
+        if (!updated) {
+            break;
+        }
     }
 
     return placements;
@@ -452,11 +447,10 @@ int main(int argc, char* argv[]) {
 		readProblem(ifs, problem);
     }
 #else
+
     Problem problem;
     readProblem(cin, problem);
 #endif
-
-    cerr << "pillar:" << problem.pillars.size() << endl;
 
     auto placement = solve(problem);
     gvPlacements(placement);
