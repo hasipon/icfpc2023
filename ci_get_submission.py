@@ -44,19 +44,21 @@ def main():
                 os.remove(submission)
                 print(f"got 404. remove submission file {submission}")
                 continue
-            if 500 <= e.code:
+            elif 500 <= e.code:
                 print(f"got {e.code}. exit program for now")
                 return
-            raise
-
-        js = json.loads(response)
-        failure = "Failure" in js["Success"]["submission"]["score"]
-        success = "Success" in js["Success"]["submission"]["score"]
-        if failure or success:
-            print(f'saving {submission}.result')
-            with open(f'{submission}.result', mode="w") as result_file:
-                result_file.write(response)
-                result_file.write("\n")
+        except Exception as e:
+            print(f"got {e}. exit program for now")
+            return
+        else:
+            js = json.loads(response)
+            failure = "Failure" in js["Success"]["submission"]["score"]
+            success = "Success" in js["Success"]["submission"]["score"]
+            if failure or success:
+                print(f'saving {submission}.result')
+                with open(f'{submission}.result', mode="w") as result_file:
+                    result_file.write(response)
+                    result_file.write("\n")
 
 
 if __name__ == "__main__":
