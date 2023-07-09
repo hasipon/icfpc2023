@@ -22,15 +22,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let args: Vec<String> = env::args().collect();
     let id = if args.len() <= 1 { "81" } else { &args[1] };
-    for i in 1..255
-    {
-        for j in 1..165
-        {
-            // println!("{} {}", i, j);
-            solve(i as f64, j as f64, id, timestamp)?;
-        }
-    }
-
+    solve(id, timestamp)?;
     Ok(())
 }
 
@@ -47,22 +39,12 @@ fn calcPerm(problem:&Problem) -> Vec<usize> {
     perm
 }
 
-
-fn solve(w:f64, h:f64, index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
-    let data:String = fs::read_to_string(format!("../../problem.json/{}.json", index))?; 
-    let mut problem:Problem = serde_json::from_str(&data)?;
-    let mut placements = Vec::new();
-    let x = problem.stage_bottom_left.0 + 10.0;  
-    let y = problem.stage_bottom_left.1 + 10.0;
-    // let w = 90.; // problem.stage_width - 20.0;
-    // let h = 90.; //  problem.stage_height - 20.0;
+fn coreSolve(problem:&Problem, w:f64, h:f64, index:i32) -> (f64, Vec<Point>) {
     let mut cache = CacheState::new(&problem);
     let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(3);
-    let index:i32 = index.parse()?;
-    if index > 55 {
-        problem.extention = Option::Some(());
-    }
-
+    let mut placements = Vec::new();
+    let x = problem.stage_bottom_left.0 + 10.0;
+    let y = problem.stage_bottom_left.1 + 10.0;
     // 外側に配置する
     {
         let mut dx = 0.0;
@@ -79,10 +61,10 @@ fn solve(w:f64, h:f64, index:&str, timestamp:i64) -> Result<(), Box<dyn std::err
         while permI < problem.musicians.len()
         {
             if (bottom - top).abs() < 10. {
-                return Result::Ok(())
+                return (0.0, Vec::new())
             }
             if (left - right).abs() < 10. {
-                return Ok(())
+                return (0.0, Vec::new())
             }
             let i = perm[permI];
             permI += 1;
@@ -111,7 +93,7 @@ fn solve(w:f64, h:f64, index:&str, timestamp:i64) -> Result<(), Box<dyn std::err
                 left += 10.0;
                 cy = top;
                 cx = left;
-                
+
                 dx = 1.0;
                 dy = 0.0;
             }
@@ -119,7 +101,7 @@ fn solve(w:f64, h:f64, index:&str, timestamp:i64) -> Result<(), Box<dyn std::err
                 top += 10.0;
                 cx = right;
                 cy = top;
-                
+
                 dx = 0.0;
                 dy = 1.0;
             }
@@ -131,40 +113,69 @@ fn solve(w:f64, h:f64, index:&str, timestamp:i64) -> Result<(), Box<dyn std::err
     {
         let now = eval(&problem, &placements, &mut cache);
         if now == lastI{
-           break;
+            break;
         }
         lastI = now;
-        // println!("{}: {}  :{}", index, i, now);
-        // try_bulk_swap(&problem, &mut placements, &mut rng, &mut cache);
+        try_bulk_swap(&problem, &mut placements, &mut rng, &mut cache);
         let mut lastJ  = 0.;
         for j in 0..10
         {
             let now = eval(&problem, &placements, &mut cache);
             if now == lastJ{
-               break;
+                break;
             }
             lastJ = now;
-            // println!("{}: {}-{}:{}", index, i, j, now);
             try_swap(&problem, &mut placements, &mut rng, &mut cache);
         }
     }
-
     let score = eval(&problem, &placements, &mut cache);
-    println!("{}({}, {}):{}", w, h, index, score);
+    return (score, placements);
+}
 
-    let answer:Answer = Answer { placements };
+fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
+    let data:String = fs::read_to_string(format!("../../problem.json/{}.json", index))?; 
+    let mut problem:Problem = serde_json::from_str(&data)?;
+    let index:i32 = index.parse()?;
+    if index > 55 {
+        problem.extention = Option::Some(());
+    }
+    let w = problem.stage_width - 20.0;
+    let h = problem.stage_height - 20.0;
+
+    let mut bestScore = 0.0;
+    let mut bestPlacements = Vec::new();
+    let unit = 10.;
+    let mut nowW = 0.0;
+    while nowW < w {
+        let mut nowH = 0.;
+        while nowH < h {
+            let (score, placements) = coreSolve(&problem, nowW, nowH, index);
+            if score > bestScore {
+                bestScore = score;
+                bestPlacements = placements;
+                println!("{}\t{}\t{}", bestScore, nowW, nowH);
+            }
+            nowH = nowH + unit;
+        }
+        nowW = nowW + unit;
+    }
+    println!("{}\t{}", bestScore, index);
+
+    let answer:Answer = Answer { placements: bestPlacements };
     let answer_string = serde_json::to_string(&answer)?;
     let name = "shiota9";
     fs::write(
-        format!("../../solutions/{}-{}.json", index, name), 
+        format!("../../solutions/{}-{}-{}.json", index, name,timestamp),
         &answer_string
     )?;
     fs::write(
-        format!("../../solutions/{}-{}.myeval", index, name), 
-        &score.to_string()
+        format!("../../solutions/{}-{}-{}.myeval", index, name, timestamp),
+        &bestScore.to_string()
     )?;
+
     Ok(())
 }
+
 fn try_bulk_swap<R:Rng>(problem:&Problem, placements:&mut Vec<Point>, rng:&mut R, cache:&mut CacheState) {
     let tasteN = problem.attendees[0].tastes.len();
     for ti in 0 .. tasteN {
