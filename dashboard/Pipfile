@@ -12,6 +12,7 @@ sqlalchemy = "*"
 pymysql = "*"
 cors = "*"
 flask-cors = "*"
-drawsvg = "*"
+drawsvg = {version = "~=2.0", extras = ["all"]}
+cairosvg = "*"
 
 [dev-packages]
