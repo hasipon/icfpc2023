@@ -19,7 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let timestamp = Utc::now().timestamp();
 
     let args: Vec<String> = env::args().collect();
-    let id = if args.len() <= 1 { "11" } else { &args[1] };
+    let id = if args.len() <= 1 { "81" } else { &args[1] };
     solve(id, timestamp)?;
 
     Ok(())
@@ -61,7 +61,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
 
     let answer:Answer = Answer { placements, volumes };
     let answer_string = serde_json::to_string(&answer)?;
-    let name = "shohei11";
+    let name = "shohei10-4";
     fs::write(
         format!("../../solutions/{}-{}.json", index, name), 
         &answer_string
