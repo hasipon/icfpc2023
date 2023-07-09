@@ -106,8 +106,14 @@ using grid_score = pair<double, grid>;
 vector<vector<grid_score>> gridRanking(const Problem &problem) {
     constexpr int stageGrid = 10;
 
-    const auto x_grids = int(ceil((problem.stageWidth - 20) / stageGrid));
-    const auto y_grids = int(ceil((problem.stageHeight - 20) / stageGrid));
+    auto x_grids = int(ceil((problem.stageWidth - 20) / stageGrid));
+    auto y_grids = int(ceil((problem.stageHeight - 20) / stageGrid));
+    if (x_grids == 0) {
+        x_grids = 1;
+    }
+    if (y_grids == 0) {
+        y_grids = 1;
+    }
 
     vector<vector<grid_score>> gridss(problem.attendees[0].tastes.size());
     for (auto &grids: gridss) {
@@ -115,9 +121,10 @@ vector<vector<grid_score>> gridRanking(const Problem &problem) {
     }
 
     for (int x_grid = 0; x_grid < x_grids; x_grid++) {
+        const int x = problem.stageLeft + 10 + x_grid * stageGrid;
         for (int y_grid = 0; y_grid < y_grids; y_grid++) {
-            const int x = problem.stageLeft + 10 + x_grid * stageGrid;
             const int y = problem.stageBottom + 10 + y_grid * stageGrid;
+
             vector<double> score(problem.attendees[0].tastes.size());
             for (int aud = 0; aud < problem.attendees.size(); aud++) {
                 const auto &audience = problem.attendees[aud];
