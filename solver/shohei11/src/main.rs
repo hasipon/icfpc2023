@@ -18,7 +18,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let timestamp = Utc::now().timestamp();
 
     let args: Vec<String> = env::args().collect();
-    let id = if args.len() <= 1 { "14" } else { &args[1] };
+    let id = if args.len() <= 1 { "9" } else { &args[1] };
     solve(id, timestamp)?;
 
     Ok(())
@@ -45,7 +45,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
 
     println!("{}", placements.len());
     let mut swap_state = SwapState::new(&problem);
-    for i in 0..20
+    for i in 0..2
     {
         println!("{}: s{}:{}", index, i, s_eval(&problem, &placements, &mut volumes, &mut swap_state));
         try_swap(&problem, &mut placements, &mut rng, &mut swap_state);
@@ -53,11 +53,19 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     
         println!("{}: g{}:{}", index, i, s_eval(&problem, &placements, &mut volumes, &mut swap_state));
         grid_state.try_grid_move(&problem, &mut placements, &mut grid_cache);
+        swap_state = SwapState::new(&problem);
     }
 
-    // println!("{}: last:{}", index, s_eval(&problem, &placements, &mut volumes, &mut swap_state));
-    // try_swap(&problem, &mut placements, &mut rng, &mut swap_state);
-    // swap_state = SwapState::new(&problem);
+    println!("{}: last:{}", index, s_eval(&problem, &placements, &mut volumes, &mut swap_state));
+    try_swap(&problem, &mut placements, &mut rng, &mut swap_state);
+    swap_state = SwapState::new(&problem);
+    println!("{}: last:{}", index, s_eval(&problem, &placements, &mut volumes, &mut swap_state));
+    try_swap(&problem, &mut placements, &mut rng, &mut swap_state);
+    swap_state = SwapState::new(&problem);
+    println!("{}: last:{}", index, s_eval(&problem, &placements, &mut volumes, &mut swap_state));
+    try_swap(&problem, &mut placements, &mut rng, &mut swap_state);
+    swap_state = SwapState::new(&problem);
+    
     
     let score = s_eval(&problem, &placements, &mut volumes, &mut swap_state);
     println!("{}:{}", index, score);

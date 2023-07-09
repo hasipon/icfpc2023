@@ -86,6 +86,7 @@ impl GridState {
             //println!("{}/{}", i, placements.len());
             cache.remove(&self, &problem, &placements, i);
             let best = self.find_best(problem, &placements, i, cache);
+            //println!("{:?} {:?}", placements[i], best.0.to_point(&self));
             placements[i] = best.0.to_point(&self);
             cache.add(&self, &problem, &placements, best.0, best.1,i);
         }
@@ -132,7 +133,7 @@ impl GridState {
                     if let Some(d2) =  cache.sights[crossing.m].get(&crossing.a)
                     {
                         let a = &problem.attendees[crossing.a];
-                        score -= 1000000.0 * a.tastes[problem.musicians[index]] / d2;
+                        score -= 100000.0 * a.tastes[problem.musicians[crossing.m]] / d2;
                     }
                 }
 
