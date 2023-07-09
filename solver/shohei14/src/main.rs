@@ -99,6 +99,9 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
                     break;
                 }
             }
+            if rng.gen_bool(0.02) {
+                try_swap(&problem, &mut placements, &mut rng, &mut SwapState::new(&problem));
+            }
             let score = s_eval(&problem, &placements, &mut volumes);
             if score > max_score
             {
@@ -118,7 +121,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         {
             best_name.remove(0); 
         }
-        let name = format!("shohei14-3-{}-{}", seed, best_name);
+        let name = format!("shohei14-4-{}-{}", seed, best_name);
         fs::write(
             format!("../../solutions/{}-{}", index, name), 
             &answer_string
