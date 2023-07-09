@@ -46,15 +46,15 @@ fn calcPerm(problem:&Problem) -> Vec<usize> {
     perm
 }
 
-fn coreSolveGaishu(problem:&Problem, offsetX:f64, offsetY:f64) -> (f64, Vec<Point>, Vec<f64>) {
+fn coreSolveGaishu(problem:&Problem, offsetX:f64, offsetY:f64, blank:f64) -> (f64, Vec<Point>, Vec<f64>) {
     let mut cache = CacheState::new(&problem);
     let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(3);
     let mut placements = Vec::new();
     let mut volume = Vec::new();
     let x = problem.stage_bottom_left.0 + 10.0 + offsetX;
     let y = problem.stage_bottom_left.1 + 10.0 + offsetY;
-    let w = problem.stage_width - 20.0;
-    let h = problem.stage_height - 20.0;
+    let w = problem.stage_width - 20.0 - offsetX;
+    let h = problem.stage_height - 20.0 - offsetY;
 
     // 外側に配置する
     {
@@ -79,14 +79,14 @@ fn coreSolveGaishu(problem:&Problem, offsetX:f64, offsetY:f64) -> (f64, Vec<Poin
             }
             let i = perm[permI];
             permI += 1;
-            let speed = 10.0;
+            let speed = 10.0 + blank;
             placements.push(Point{x:cx, y:cy});
             volume.push(0.);
 
             cx += dx * speed;
             cy += dy * speed;
             if cy > bottom {
-                right -= 10.0;
+                right -= speed;
                 cy = bottom;
                 cx = right;
 
@@ -94,7 +94,7 @@ fn coreSolveGaishu(problem:&Problem, offsetX:f64, offsetY:f64) -> (f64, Vec<Poin
                 dy = 0.0;
             }
             if cx < left {
-                bottom -= 10.0;
+                bottom -= speed;
                 cx = left;
                 cy = bottom;
 
@@ -102,7 +102,7 @@ fn coreSolveGaishu(problem:&Problem, offsetX:f64, offsetY:f64) -> (f64, Vec<Poin
                 dx = 0.0;
             }
             if cy < top {
-                left += 10.0;
+                left += speed;
                 cy = top;
                 cx = left;
 
@@ -110,7 +110,7 @@ fn coreSolveGaishu(problem:&Problem, offsetX:f64, offsetY:f64) -> (f64, Vec<Poin
                 dy = 0.0;
             }
             if cx > right {
-                top += 10.0;
+                top += speed;
                 cx = right;
                 cy = top;
 
@@ -121,10 +121,10 @@ fn coreSolveGaishu(problem:&Problem, offsetX:f64, offsetY:f64) -> (f64, Vec<Poin
     }
 
     let mut lastI  = 0.;
-    for i in 0..20
+    while(true)
     {
         let now = eval(&problem, &placements, &mut volume, &mut cache);
-        if now == lastI{
+        if (now - lastI).abs() < 1. {
             break;
         }
         lastI = now;
@@ -133,7 +133,7 @@ fn coreSolveGaishu(problem:&Problem, offsetX:f64, offsetY:f64) -> (f64, Vec<Poin
         for j in 0..10
         {
             let now = eval(&problem, &placements, &mut volume, &mut cache);
-            if now == lastJ{
+            if (now - lastJ).abs() < 1. {
                 break;
             }
             lastJ = now;
@@ -150,12 +150,15 @@ fn coreSolveHeat(problem:&Problem, heat:&Vec<(f64,f64)>, index:i32, offsetX:f64,
     let mut placements = Vec::new();
     let mut volume = Vec::new();
 
-    let xRange = (problem.stage_bottom_left.0 + 10.0 , problem.stage_bottom_left.0 + problem.stage_width - 10.0);
-    let yRange = (problem.stage_bottom_left.1 + 10.0 , problem.stage_bottom_left.1 + problem.stage_height - 10.0);
+    let xRange = (problem.stage_bottom_left.0 + 10.0 , problem.stage_bottom_left.0 + problem.stage_width - 20.0);
+    let yRange = (problem.stage_bottom_left.1 + 10.0 , problem.stage_bottom_left.1 + problem.stage_height - 20.0);
     let mut amari = Vec::new();
     for (xx, yy) in heat {
-        let x = offsetX + xx;
-        let y = offsetY + yy;
+        let x = xx + offsetX;
+        let y = yy + offsetY;
+        if x < xRange.0 || x > xRange.1 || y < yRange.0 || y > yRange.1 {
+            continue;
+        }
         let hoge = 5.;
         if (x - xRange.0).abs() > hoge && (x - xRange.1).abs() > hoge && (y - yRange.0).abs() > hoge && (y - yRange.1).abs() >hoge {
             amari.push((x,y));
@@ -229,11 +232,9 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let mut bestScore = 0.0;
     let mut bestPlacements = Vec::new();
     let mut bestVolumes = Vec::new();
-    for offsetX in [10 - problem.stage_bottom_left.0 as i64 % 10, 10 - (problem.stage_bottom_left.0 + problem.stage_width) as i64 % 10]
-    {
-        for offsetY in  [10- problem.stage_bottom_left.1 as i64 % 10, 10 - (problem.stage_bottom_left.1 + problem.stage_height) as i64 % 10]{
-            let (score, placements, volumes) = coreSolveHeat(&problem, &heat, index, (offsetX % 10) as f64, (offsetY %10) as f64);
-            eprintln!("heat {}", score);
+    for offsetX in [0, (problem.stage_bottom_left.0 + problem.stage_width) as i64 % 10] {
+        for offsetY in [0, (problem.stage_bottom_left.1 + problem.stage_height) as i64 % 10] {
+            let (score, placements, volumes) = coreSolveHeat(&problem, &heat, index, offsetX as f64, offsetY as f64);
             if score > bestScore {
                 bestScore = score;
                 bestPlacements = placements;
@@ -241,14 +242,16 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-    for offsetX in [0, (10 + (problem.stage_bottom_left.0) as i64 %10 - (problem.stage_bottom_left.0 + problem.stage_width) as i64 % 10) %10] {
-        for offsetY in [0, (10 + (problem.stage_bottom_left.1) as i64 %10 - (problem.stage_bottom_left.1 + problem.stage_height) as i64 % 10) %10] {
-            let (score, placements, volumes) = coreSolveGaishu(&problem, offsetX as f64, offsetY as f64);
-            eprintln!("gaishu {}", score);
-            if score > bestScore {
-                bestScore = score;
-                bestPlacements = placements;
-                bestVolumes = volumes;
+    for offsetX in [0, (problem.stage_bottom_left.0 + problem.stage_width) as i64 % 10] {
+        for offsetY in [0, (problem.stage_bottom_left.1 + problem.stage_height) as i64 % 10] {
+            for b in 0..5 {
+                let (score, placements, volumes) = coreSolveGaishu(&problem, offsetX as f64, offsetY as f64, b as f64);
+                if score > bestScore {
+                    bestScore = score;
+                    bestPlacements = placements;
+                    bestVolumes = volumes;
+                }
+
             }
         }
     }
