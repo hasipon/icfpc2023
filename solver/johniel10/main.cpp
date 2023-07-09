@@ -156,7 +156,8 @@ pair<bool, long long> calcScore(const Problem& problem, vector<pair<double, doub
             }
         }
     }
-    lli score = 0;
+    double score = 0;
+    // lli score = 0;
     for (auto& a : problem.attendees) {
         for (unsigned i = 0; i < placements.size(); i++) {
             auto [x, y] = placements[i];
@@ -608,7 +609,6 @@ namespace min_cost_flow {
 };
 namespace mcf = min_cost_flow;
 
-
 lli calcInstBaseScore(const Problem& problem, const pair<double, double> pos, const int inst) {
   const double x = pos.first;
   const double y = pos.second;
@@ -632,7 +632,7 @@ bool is_inside(const Problem& problem, pair<double, double> p)
 }
 
 
-vector<pair<double, double>> solveF(const Problem& problem)
+pair<vector<pair<double, double>>, vec<double>> solveF(const Problem& problem)
 {
   map<int, vec<int>> musicianIndexByTaste;
   for (int i = 0; i < problem.musicians.size(); ++i) {
@@ -646,6 +646,8 @@ vector<pair<double, double>> solveF(const Problem& problem)
 
   const pair<double, double> upperRight = make_pair(problem.stageLeft + problem.stageWidth, problem.stageBottom + problem.stageHeight);
   const pair<double, double> bottomLeft = make_pair(problem.stageLeft, problem.stageBottom);
+
+  vec<double> volumes(problem.musicians.size(), 10.0);
 
   vec<pair<double, double>> candidates;
   for (int i = 2; ; ++i) {
@@ -680,8 +682,10 @@ vector<pair<double, double>> solveF(const Problem& problem)
   }
   candidates.pop_back();
 
-  for (int i = -2; i <= 2; ++i) {
-    for (int j = -2; j <= 2; ++j) {
+  const int enabled = candidates.size();
+
+  for (int i = -20; i <= 20; ++i) {
+    for (int j = -20; j <= 20; ++j) {
       pair<double, double> p = bottomLeft;
       p.first += problem.stageWidth / 2.0;
       p.second += problem.stageHeight / 2.0;
@@ -728,6 +732,9 @@ vector<pair<double, double>> solveF(const Problem& problem)
           // cerr << make_pair(a, b) << endl;
           assert(musicianIndexByTaste[a].size());
           placements[musicianIndexByTaste[a].back()] = candidates[b];
+          if (enabled <= b) {
+            volumes[musicianIndexByTaste[a].back()] = 0.0;
+          }
           musicianIndexByTaste[a].pop_back();
         }
       }
@@ -736,7 +743,7 @@ vector<pair<double, double>> solveF(const Problem& problem)
   each (p, placements) {
     if (p.first < 0) p = makeStart(problem, placements);
   }
-  return placements;
+  return {placements, volumes};
 }
 
 int main() {
@@ -768,11 +775,11 @@ int main() {
     });
     while (true) {
       auto a = problem.attendees.back();
-      if (geo::distance_bp(box, a.position()) < 200) break;
+      if (geo::distance_bp(box, a.position()) < 300) break;
       problem.attendees.pop_back();
     }
 
-    auto placement = solveF(problem);
+    auto [placement, volumes] = solveF(problem);
     auto res = calcScore(problem, placement);
     cerr << "score = " << res.second << endl;
 
@@ -780,6 +787,11 @@ int main() {
     for (unsigned i = 0; i < placement.size(); i++) {
         if (i > 0) cout << ",";
         cout << "{\"x\":" << placement[i].first << ",\"y\":" << placement[i].second << "}";
+    }
+    cout << "],\"volumes\":[";
+    for (unsigned i = 0; i < volumes.size(); i++) {
+      if (i > 0) cout << ",";
+      cout << volumes[i];
     }
     cout << "]}" << endl;
 
