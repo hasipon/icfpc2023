@@ -6,7 +6,7 @@ on:
       solver-path:
         required: true
         default: ""
-        description: Your solver path on the server. (/home/ubuntu/LOCAL/mysolver)
+        description: Your solver path on the server. (ex. /home/ubuntu/LOCAL/mysolver)
       solver-name:
         required: true
         default: ""
