@@ -32,7 +32,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let y = problem.stage_bottom_left.1 + 10.0;
     let w = problem.stage_width - 20.0;
     let h = problem.stage_height - 20.0;
-    let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(7);
+    let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(15);
     
     let mut volumes = vec![1.0; problem.musicians.len()];
     let iindex:i64 = index.parse()?;
@@ -61,7 +61,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
 
     let answer:Answer = Answer { placements, volumes };
     let answer_string = serde_json::to_string(&answer)?;
-    let name = "shohei12-3";
+    let name = "shohei12-4";
     fs::write(
         format!("../../solutions/{}-{}.json", index, name), 
         &answer_string
