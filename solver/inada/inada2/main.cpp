@@ -280,6 +280,7 @@ long long swapDeltaScore(
 
 vector<pair<double, double>> solve(const Problem& problem, const map<pair<double, double>, double>& heatmap) {
     // step1. 外周に沿って配置, スコアに影響のないものは削除
+	set<pair<double, double>> fixed_points;
 	map<pair<double, double>, int> p_tastes;
 	map<pair<double, double>, long long> p_score;
 	map<int, int> free_tastes;
@@ -310,26 +311,25 @@ vector<pair<double, double>> solve(const Problem& problem, const map<pair<double
         const auto y = problem.stageBottom + 10.0;
         const auto w = problem.stageWidth - 20.0;
         const auto h = problem.stageHeight - 20.0;
+        const double nx = long long(w) / 10;
+        const double ny = long long(h) / 10;
+        const double ex = long long(w) % 10;
+        const double ey = long long(h) % 10;
 
-        const auto speed = 10.0;
+        const auto speed_x = 10.0 + ex / nx;
+        const auto speed_y = 10.0 + ey / ny;
         const auto left = x;
         const auto right = x + w;
         const auto top = y;
         const auto bottom = y + h;
 
         auto dx = 0.0;
-        auto dy = speed;
+        auto dy = speed_y;
         auto cx = right;
         auto cy = y;
-        double ex = long long(w) % 10;
-        double ey = long long(h) % 10;
 
         for (;;) {
             add_candidate(cx, cy);
-            if (0 < dy) add_candidate(cx, cy + ey);
-            if (0 > dy) add_candidate(cx, cy - ey);
-            if (0 < dx) add_candidate(cx + ex, cy);
-            if (0 > dx) add_candidate(cx - ex, cy);
 
             cx += dx;
             cy += dy;
@@ -338,7 +338,7 @@ vector<pair<double, double>> solve(const Problem& problem, const map<pair<double
                 cy = bottom;
                 cx = right;
 
-                dx = -speed;
+                dx = -speed_x;
                 dy = 0.0;
             }
 
@@ -346,7 +346,7 @@ vector<pair<double, double>> solve(const Problem& problem, const map<pair<double
                 cx = left;
                 cy = bottom;
 
-                dy = -speed;
+                dy = -speed_y;
                 dx = 0.0;
             }
 
@@ -354,7 +354,7 @@ vector<pair<double, double>> solve(const Problem& problem, const map<pair<double
                 cy = top;
                 cx = left;
 
-                dx = speed;
+                dx = speed_x;
                 dy = 0.0;
             }
 
@@ -363,7 +363,7 @@ vector<pair<double, double>> solve(const Problem& problem, const map<pair<double
                 cy = top;
 
                 dx = 0.0;
-                dy = speed;
+                dy = speed_y;
                 break;
             }
         }
@@ -442,6 +442,7 @@ vector<pair<double, double>> solve(const Problem& problem, const map<pair<double
         for (int i = 0; i < placements.size(); i++) {
             const auto& p = placements[i];
             if (0 < res.second[i] && edge_points.find(p) != edge_points.end()) {
+                fixed_points.emplace(p);
                 p_tastes.emplace(p, problem.musicians[i]);
                 p_score.emplace(p, res.second[i]);
                 gvCircle(p.first, p.second, 5, gvRGB(0, 0, 255));
@@ -451,35 +452,124 @@ vector<pair<double, double>> solve(const Problem& problem, const map<pair<double
             }
         }
 
+		gvNewTime();
 		gvStage(problem);
 		gvPlacements(placements);
     }
 
     // step2. 1で得た人の周りに残りの人を配置
 	{
-        multimap<double, pair<double, double>> candidates;
+        const auto w = problem.stageWidth - 20.0;
+        const auto h = problem.stageHeight - 20.0;
+        const double nx = long long(w) / 10;
+        const double ny = long long(h) / 10;
+        const double ex = long long(w) % 10;
+        const double ey = long long(h) % 10;
+        const auto speed_x = 10.0 + ex / nx;
+        const auto speed_y = 10.0 + ey / ny;
+
+        set<pair<double, double> > candidates_set;
         auto add_candidate = [&](double x, double y) {
-            if (!(problem.stageBottom + 10 <= y && y <= problem.stageBottom + problem.stageHeight - 10 &&
-                problem.stageLeft + 10 <= x && x <= problem.stageLeft + problem.stageWidth - 10
-                )) {
-                cerr << "Reject" << x << " " << y << endl;
+			if (!(problem.stageBottom + 10 <= y && y <= problem.stageBottom + problem.stageHeight - 10 &&
+				problem.stageLeft + 10 <= x && x <= problem.stageLeft + problem.stageWidth - 10)) {
                 return;
             }
-            candidates.emplace(1, make_pair(x, y));
+            candidates_set.emplace(x, y);
         };
-        for (auto& elem: p_score) {
-            auto [x, y] = elem.first;
-            auto dx = 1.0L / 2;
-            auto dy = sqrtl(3) / 2;
+
+        for (auto& fixed_p: fixed_points) {
+            auto [x, y] = fixed_p;
+
+            for (int t = 0; t < 2; t++) {
+                auto sx = t == 0 ? speed_x : -speed_x;
+                auto sy = t == 0 ? speed_y : -speed_y;
+				if (p_score.find(make_pair(x + sx, y)) != p_score.end()) {
+					auto cx = x + sx / 2;
+					auto dy = sqrt(100.0 - sx * sx / 4) + 0.01;
+					add_candidate(cx, y + dy);
+					add_candidate(cx, y - dy);
+				}
+
+				if (p_score.find(make_pair(x, y + sy)) != p_score.end()) {
+					auto cy = y + sy / 2;
+					auto dx = sqrt(100.0 - sx * sx / 4) + 0.01;
+					add_candidate(x + dx, cy);
+					add_candidate(x - dx, cy);
+				}
+            }
         }
+
+		for (const auto& p : candidates_set) {
+			gvCircle(p.first, p.second, 5, gvRGB(0, 0, 255));
+		}
+
+		gvNewTime();
+		gvStage(problem);
+        // gvPlacements(placements);
+
+        vector<pair<double, double>> placements(fixed_points.begin(), fixed_points.end());
+        auto checkPlacements = [&](double x, double y) -> bool {
+            for (unsigned i = 0; i < placements.size(); ++i) {
+                auto [x2, y2] = placements[i];
+                if ((x - x2) * (x - x2) + (y - y2) * (y - y2) < 100) {
+                    return false;
+                }
+            }
+            return true;
+        };
+		gvNewTime();
+		gvStage(problem);
+        for (const auto& p : candidates_set) {
+            if (checkPlacements(p.first, p.second)) {
+                placements.push_back(p);
+                if (placements.size() == problem.musicians.size()) break;
+            }
+        }
+
+        while (placements.size() < problem.musicians.size()) {
+            double x0 = problem.stageLeft + 10 + g_rand() % ((int)problem.stageWidth - 19);
+            double y0 = problem.stageBottom + 10 + g_rand() % ((int)problem.stageHeight - 19);
+            if (checkPlacements(x0, y0)) {
+                placements.emplace_back(x0, y0);
+            }
+        }
+
+        {
+            map<pair<double, double>, vector<long long>> cache;
+            auto res = calcScoreWithCache(problem, placements, cache, true);
+            auto score = res.second;
+            cerr << "score: " << score << endl;
+
+            bool updated = true;
+            while (updated) {
+                updated = false;
+                for (int i = 0; i < placements.size(); i++) {
+                    for (int j = i + 1; j < placements.size(); j++) {
+                        if (problem.musicians[i] == problem.musicians[j]) continue;
+                        auto ds = swapDeltaScore(problem, placements, cache, true, i, j);
+                        if (0 < ds) {
+                            score += ds;
+                            std::swap(placements[i], placements[j]);
+                            updated = true;
+                        }
+                    }
+                }
+            }
+            cerr << "score: " << score << endl;
+        }
+
+		gvNewTime();
+		gvStage(problem);
+        gvPlacements(placements);
+		return placements;
 	}
 
 	gvNewTime();
 	gvClose();
     exit(0);
 
-	vector <pair<double, double>> dummy;
-    return dummy;
+	// vector <pair<double, double>> dummy;
+    // return dummy;
 }
 
 void readProblem(std::istream& is, Problem& problem) {
@@ -558,7 +648,7 @@ int main(int argc, char* argv[]) {
     writePlacementsJSON(cout, placement, res.second);
 #if LOCAL_DEBUG
     {
-        ofstream ofs(to_string(problem_id) + "-inada1-" + to_string(sumScore(res.second)) + ".json");
+        ofstream ofs(to_string(problem_id) + "-inada2-" + to_string(sumScore(res.second)) + ".json");
         writePlacementsJSON(ofs, placement, res.second);
     }
 #endif

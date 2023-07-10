@@ -13,7 +13,7 @@ import drawsvg as dw
 from flask import Flask, request, render_template, jsonify
 from flask_cors import CORS
 
-visualizer_url = "http://35.221.99.118/repo/visualizer"
+visualizer_url = "http://34.146.44.95/repo/visualizer"
 static_path = pathlib.Path(__file__).resolve().parent / 'static'
 repo_path = pathlib.Path(__file__).resolve().parent.parent
 ideal_tsv_path = repo_path / "ideal.tsv"

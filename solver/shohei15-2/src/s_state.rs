@@ -198,7 +198,7 @@ pub fn s_eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, t
     let mut result = 0.0;
     for sight in cache.placement_sights[index].as_ref().unwrap() {
         let a = &problem.attendees[sight.attendee];
-        result += 1000000.0 * a.tastes[problem.musicians[index]] / sight.d2;
+        result += (1000000.0 * a.tastes[problem.musicians[index]] / sight.d2).ceil();
     }
     cache.placement_score[index] = result;
 
