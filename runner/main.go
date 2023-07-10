@@ -307,6 +307,19 @@ func mainRun() {
 				gitCommitAndPush()
 			}
 
+			runsMtx.RLock()
+			cnt := 0
+			for _, run := range solverRuns {
+				if run.Running.Load() {
+					cnt++
+				}
+			}
+			runsMtx.RUnlock()
+			log.Println(cnt, "solvers running..")
+			if cnt == 0 {
+				cancel()
+			}
+
 		case <-sema:
 			runsMtx.RLock()
 			if nextIndex < len(solverRuns) {
@@ -321,13 +334,7 @@ func mainRun() {
 				nextIndex++
 				log.Printf("Enqueue run [%d/%d]\n", nextIndex, len(solverRuns))
 			}
-			last := nextIndex == len(solverRuns)
 			runsMtx.RUnlock()
-
-			if last {
-				wg.Wait()
-				cancel()
-			}
 
 		case <-ctx.Done():
 			if ctx.Err() != nil {
