@@ -2,7 +2,7 @@ use std::{vec, cmp::Ordering, collections::HashMap};
 
 use crate::data::*;
 use std::collections::BinaryHeap;
-use rand::Rng;
+use rand::{Rng, seq::SliceRandom};
 
 // スワップ処理用の実装
 pub struct SwapState {
@@ -229,10 +229,14 @@ pub fn s_eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, t
 
 pub fn try_swap<R:Rng>(problem:&Problem, placements:&mut Vec<Point>, rng:&mut R, cache:&mut SwapState) {
     
-    for i in 0..placements.len()
+    let mut order:Vec<usize> = (0..placements.len()).collect();
+    order.shuffle(rng);
+    for oi in 0..placements.len()
     {
-        for j in i + 1..placements.len()
+        let i = order[oi];
+        for oj in i + 1..placements.len()
         {
+            let j = order[oj];
             if true { 
                 let score1 = s_eval_placement(problem, placements, i, false, cache).0 + s_eval_placement(problem, placements, j, false, cache).0;
                 let scorei = cache.placement_score[i];

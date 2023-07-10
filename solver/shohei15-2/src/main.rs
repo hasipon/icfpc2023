@@ -84,9 +84,9 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let mut max_score = init_score;
     let mut max_result = best.placements;
     let musician_groups = SwapState::new(&problem).musician_groups;
-    for j in 1..5
+    for j in 1..6
     {
-        for i in 1..100 * j
+        for i in 1..125 * j
         {
             let mut placements = max_result.clone();
             let swaps = rng.gen_bool(0.01);
