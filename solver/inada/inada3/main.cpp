@@ -454,7 +454,7 @@ int main(int argc, char* argv[]) {
 
     if (getenv("SOLUTION") != nullptr) {
         std::ifstream f(getenv("SOLUTION"));
-		json data = json::parse(f);
+        json data = json::parse(f);
         vector<pair<double, double>> placements;
         for (auto& e : data["placements"]) {
             double x, y;
@@ -463,18 +463,18 @@ int main(int argc, char* argv[]) {
             placements.emplace_back(x, y);
         }
 
-		auto best_placements = solve(problem, placements);
+        auto best_placements = solve(problem, placements);
         if (!best_placements.empty()) {
-			auto res = calcScore(problem, best_placements);
-			writePlacementsJSON(cout, best_placements, res.second);
-			if (!res.first) throw runtime_error("invalid placement");
-			cerr << "score = " << sumScore(res.second) << endl;
+            auto res = calcScore(problem, best_placements);
+            writePlacementsJSON(cout, best_placements, res.second);
+            if (!res.first) throw runtime_error("invalid placement");
+            cerr << "score = " << sumScore(res.second) << endl;
         }
     }
 
-	for (int i = 1; i < argc; i++) {
-		std::ifstream f(argv[i]);
-		json data = json::parse(f);
+    for (int i = 1; i < argc; i++) {
+        std::ifstream f(argv[i]);
+        json data = json::parse(f);
         vector<pair<double, double>> placements;
         for (auto& e : data["placements"]) {
             double x, y;
@@ -483,14 +483,14 @@ int main(int argc, char* argv[]) {
             placements.emplace_back(x, y);
         }
 
-		auto best_placements = solve(problem, placements);
+        auto best_placements = solve(problem, placements);
         if (!best_placements.empty()) {
-			auto res = calcScore(problem, best_placements);
-			writePlacementsJSON(cout, best_placements, res.second);
-			if (!res.first) throw runtime_error("invalid placement");
-			cerr << "score = " << sumScore(res.second) << endl;
+            auto res = calcScore(problem, best_placements);
+            writePlacementsJSON(cout, best_placements, res.second);
+            if (!res.first) throw runtime_error("invalid placement");
+            cerr << "score = " << sumScore(res.second) << endl;
         }
-	}
+    }
 
 #if LOCAL_DEBUG
     {
