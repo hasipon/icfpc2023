@@ -6,19 +6,20 @@ extern crate chrono;
 
 mod data;
 mod s_state;
+mod g_state;
 use data::*;
 use s_state::*;
-use std::{fs::{self, File}, env, collections::HashMap};
-use rand::{Rng, rngs::ThreadRng};
+use g_state::*;
+use std::{fs, env};
+use rand::Rng;
 use chrono::prelude::*;
-use std::io::Read;
 
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let timestamp = Utc::now().timestamp();
 
     let args: Vec<String> = env::args().collect();
-    let id = if args.len() <= 1 { "9" } else { &args[1] };
+    let id = if args.len() <= 1 { "2" } else { &args[1] };
     solve(id, timestamp)?;
 
     Ok(())
@@ -31,7 +32,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let y = problem.stage_bottom_left.1 + 10.0;
     let w = problem.stage_width - 20.0;
     let h = problem.stage_height - 20.0;
-    let mut seed = rand::thread_rng().gen_range(1..10000);
+    let seed = rand::thread_rng().gen_range(0..20000);
     let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(seed);
     
     let mut volumes = vec![1.0; problem.musicians.len()];
@@ -40,51 +41,32 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         problem.extention = Option::Some(());
     }
 
-    // 最善解をとってくる
-    let mut best_score = -10000000000000000000.0;
-    let mut best_name:String = String::new();
-
-    let paths = fs::read_dir("../../solutions/").unwrap();
-    for path in paths {
-        let p = path.unwrap().path();
-        let name = p.file_name().unwrap().to_str().unwrap();
-        if !name.ends_with(".json") { continue; }
-        if !name.starts_with(&format!("{}-", index)) { continue; }
-        let mut submission = match File::open(format!("../../solutions/{}.submission.result", name))
-        {
-            Ok(file) => file,
-            Err(err) => {
-                //println!("error:{}", err);
-                continue;
-            }
-        };
-        let mut buf = String::new();
-        submission.read_to_string(&mut buf)?;
-        let mut score:f64 = match serde_json::from_str::<Submission>(&buf)
-        {
-            Ok(submission) => submission.Success.submission.score.Success,
-            Err(err) => {
-                0.0
-            }
-        };
-        // 一時的に shohei12 を優先
-        if name.contains("shohei12") { score *= 1.01; }
-        if name.contains("shohei12-4") { score *= 1.01; }
-        if score > best_score {
-            best_name = name.to_string();
-            best_score = score;
-        }
+    // ランダムに配置する
+    let mut grid_state = GridState::new(&problem);
+    let mut placements = grid_state.init_grid(&problem, &mut rng);
+    for center in &placements
+    {
+        if center.x.is_nan() { panic!("x NaN!!!!!! {} {:?}", index, placements); }
+        if center.y.is_nan() { panic!("y NaN!!!!!! {} {:?}", index, placements); }
     }
-    let mut best_file = File::open(format!("../../solutions/{}", best_name))?;
-    let mut buf = String::new();
-    best_file.read_to_string(&mut buf)?;
-    let mut best:Answer = serde_json::from_str(&buf)?;
-    let init_score = s_eval(&problem, &best.placements, &mut volumes);
-    println!("{}:{} {}", index, init_score, best_score);
+
+    println!("{}", placements.len());
+    let mut swap_state = SwapState::new(&problem);
+    for i in 0..1
+    {
+        println!("{}: s{}:{}", index, i, s_eval(&problem, &placements, &mut volumes, &mut swap_state));
+        try_swap(&problem, &mut placements, &mut rng, &mut swap_state);
+        swap_state = SwapState::new(&problem);
+    
+        println!("{}: g{}:{}", index, i, s_eval(&problem, &placements, &mut volumes, &mut swap_state));
+    }
+    
+    let init_score = s_eval(&problem, &placements, &mut volumes, &mut SwapState::new(&problem));
     let mut max_score = init_score;
-    let mut max_result = best.placements;
+    let mut max_result = placements;
     let musician_groups = SwapState::new(&problem).musician_groups;
-    for j in 1..6
+
+    for j in 1..7
     {
         for i in 1..125 * j
         {
@@ -121,33 +103,28 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
             {
                 max_score = score;
                 max_result = placements;
-                println!("up: {} {} {},{}:{}:{} {}", index, best_name, j, i, pulls, score, (score - init_score) / init_score);
+                println!("up: {} {},{}:{}:{} {}", index, j, i, pulls, score, (score - init_score) / init_score);
             }
         }
     }
-    if max_score > init_score * 1.001
-    {
-        let score = s_eval(&problem, &max_result, &mut volumes);
-        println!("end: {} {}:{} {} ", index, best_name, score, (score - init_score) / init_score);
-        let answer:Answer = Answer { placements:max_result, volumes };
-        let answer_string = serde_json::to_string(&answer)?;
-        while best_name.len() > 30
-        {
-            best_name.remove(0); 
-        }
-        let name = format!("shohei15-5-{}-{}", seed, best_name);
-        fs::write(
-            format!("../../solutions/{}-{}", index, name), 
-            &answer_string
-        )?;
-        fs::write(
-            format!("../../solutions/{}-{}.myeval", index, name), 
-            &score.to_string()
-        )?;
-    }
+
+    let placement = max_result;
+    let score = s_eval(&problem, &placements, &mut volumes, &mut swap_state);
+    println!("{}:{}", index, score);
+
+    let answer:Answer = Answer { placements, volumes };
+    let answer_string = serde_json::to_string(&answer)?;
+    let name = format!("shohei12-4-{}", seed);
+    fs::write(
+        format!("../../solutions/{}-{}.json", index, name), 
+        &answer_string
+    )?;
+    fs::write(
+        format!("../../solutions/{}-{}.myeval", index, name), 
+        &score.to_string()
+    )?;
     Ok(())
 }
-
 
 fn randomize<R:Rng>(
     placements:&mut Vec<Point>,
