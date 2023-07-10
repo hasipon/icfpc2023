@@ -1,0 +1,82 @@
+{
+    "version": "2.0.0",
+    "command": "cargo",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "build"
+            ],
+            "problemMatcher": {
+                "owner": "rust",
+                "fileLocation": [
+                    "relative",
+                    "${workspaceRoot}"
+                ],
+                "pattern": [
+                    {
+                        "regexp": "(error|warning)(?:\\[(.*)\\])?: (.*)",
+                        "severity": 1,
+                        "code": 2,
+                        "message": 3
+                    },
+                    {
+                        "regexp": "-->\\s+([^:]*):(\\d+):(\\d+)",
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                ]
+            },
+            "group": {
+                "_id": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "clean",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "clean"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "build_for_test",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "test",
+                "--no-run"
+            ],
+            "problemMatcher": {
+                "owner": "rust",
+                "fileLocation": [
+                    "relative",
+                    "${workspaceRoot}"
+                ],
+                "pattern": [
+                    {
+                        "regexp": "(error|warning)(?:\\[(.*)\\])?: (.*)",
+                        "severity": 1,
+                        "code": 2,
+                        "message": 3
+                    },
+                    {
+                        "regexp": "-->\\s+([^:]*):(\\d+):(\\d+)",
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                ]
+            },
+            "group": {
+                "_id": "test",
+                "isDefault": false
+            }
+        }
+    ]
+}

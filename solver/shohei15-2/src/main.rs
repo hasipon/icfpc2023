@@ -100,10 +100,10 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
             if rng.gen_bool(0.04) {
-                let score = s_eval(&problem, &placements, &mut volumes);
+                let score = s_eval(&problem, &max_result, &mut volumes);
                 println!("ss: {} {}:{} {} ", index, best_name, score, (score - init_score) / init_score);
                 try_swap(&problem, &mut placements, &mut rng, &mut SwapState::new(&problem));
-                let score = s_eval(&problem, &placements, &mut volumes);
+                let score = s_eval(&problem, &max_result, &mut volumes);
                 println!("se: {} {}:{} {} ", index, best_name, score, (score - init_score) / init_score);
             }
             
