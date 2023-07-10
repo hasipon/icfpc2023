@@ -41,7 +41,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // 最善解をとってくる
-    let mut best_score = -1.0;
+    let mut best_score = -10000000000000000000.0;
     let mut best_name:String = String::new();
 
     let paths = fs::read_dir("../../solutions/").unwrap();
@@ -60,14 +60,15 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         };
         let mut buf = String::new();
         submission.read_to_string(&mut buf)?;
-        let score:f64 = match serde_json::from_str::<Submission>(&buf)
+        let mut score:f64 = match serde_json::from_str::<Submission>(&buf)
         {
             Ok(submission) => submission.Success.submission.score.Success,
             Err(err) => {
-                //println!("error:{}", err);
-                continue;
+                0.0
             }
         };
+        // 一時的に shohei12 を優先
+        if !name.contains("shohei12") { score -= 10000000000000000.0; }
         if score > best_score {
             best_name = name.to_string();
             best_score = score;
@@ -82,9 +83,9 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let mut max_score = init_score;
     let mut max_result = best.placements;
     let musician_groups = SwapState::new(&problem).musician_groups;
-    for j in 1..6
+    for j in 1..5
     {
-        for i in 1..180 * j
+        for i in 1..100 * j
         {
             let mut placements = max_result.clone();
             let swaps = rng.gen_bool(0.01);
