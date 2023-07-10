@@ -1,0 +1,6 @@
+taste[0] min = -1000 max = 1000 mean = 24000 size = 1
+taste[1] min = -1000 max = 1000 mean = -3000 size = 2
+taste[2] min = -1000 max = 1000 mean = 1000 size = 2
+taste[3] min = -1000 max = 1000 mean = 6000 size = 1
+taste[4] min = -1000 max = 1000 mean = 13000 size = 2
+taste[5] min = -1000 max = 1000 mean = -11000 size = 2

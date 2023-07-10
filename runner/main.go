@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -10,7 +12,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -26,6 +27,7 @@ type Config struct {
 	ActionID          string        `env:"ACTION_ID"`
 	SolverName        string        `env:"SOLVER_NAME"`
 	SolverPath        string        `env:"SOLVER_PATH"`
+	SolverArgs        string        `env:"SOLVER_ARGS"`
 	ProblemIDRange    string        `env:"PROBLEM_IDS" envDefault:"1"`
 	TimeoutEntire     time.Duration `env:"TIMEOUT_ENTIRE" envDefault:"1h"`
 	TimeoutPerProblem time.Duration `env:"TIMEOUT_PER_PROBLEM" envDefault:"1m"`
@@ -100,7 +102,7 @@ func (run *SolverRun) Run(ctx context.Context) {
 		}
 		defer stdinWriter.Close()
 
-		stdoutFilePath := path.Join(conf.OutputDir, fmt.Sprintf("%d-%s-stdout.txt", run.ProblemID, filepath.Base(run.SolverPath)))
+		stdoutFilePath := path.Join(conf.OutputDir, fmt.Sprintf("%d-%s-stdout.txt", run.ProblemID, conf.SolverName))
 		stdoutFile, err := os.OpenFile(stdoutFilePath, os.O_RDWR|os.O_CREATE, 0644)
 		if err != nil {
 			return errors.New(fmt.Sprintf("execCommand OpenFile Error: %v", err))
@@ -108,7 +110,7 @@ func (run *SolverRun) Run(ctx context.Context) {
 		defer stdoutFile.Close()
 		run.StdOutPath = stdoutFilePath
 
-		stderrFilePath := path.Join(conf.OutputDir, fmt.Sprintf("%d-%s-stderr.txt", run.ProblemID, filepath.Base(run.SolverPath)))
+		stderrFilePath := path.Join(conf.OutputDir, fmt.Sprintf("%d-%s-stderr.txt", run.ProblemID, conf.SolverName))
 		stderrFile, err := os.OpenFile(stderrFilePath, os.O_RDWR|os.O_CREATE, 0644)
 		if err != nil {
 			return errors.New(fmt.Sprintf("execCommand OpenFile Error: %v", err))
@@ -214,16 +216,29 @@ func handleWorkerEnd(run *SolverRun) {
 
 	// copy solution
 	if run.StdOutPath != "" {
+		var lastValidJSON []byte
 		stdout, err := os.ReadFile(run.StdOutPath)
 		if err != nil {
 			log.Println("os.ReadFile(run.StdOutPath) Error:", err)
 		} else if len(stdout) == 0 {
 			log.Printf("[Problem:%d] stdout is empty", run.ProblemID)
-		} else if !json.Valid(stdout) {
-			log.Printf("[Problem:%d] stdout not JSON: %s", run.ProblemID, string(stdout))
+		} else if json.Valid(stdout) {
+			lastValidJSON = stdout
 		} else {
+			log.Printf("[Problem:%d] stdout is invalid JSON. Trying scan last line..", run.ProblemID)
+			sc := bufio.NewScanner(bytes.NewReader(stdout))
+			sc.Split(bufio.ScanLines)
+			for sc.Scan() {
+				if json.Valid(sc.Bytes()) {
+					lastValidJSON = lastValidJSON[:0]
+					lastValidJSON = append(lastValidJSON, sc.Bytes()...)
+				}
+			}
+		}
+
+		if 0 < len(lastValidJSON) {
 			filePath := path.Join(conf.RepoRoot, "solutions", run.SolutionFileName)
-			err := os.WriteFile(filePath, stdout, 0644)
+			err := os.WriteFile(filePath, lastValidJSON, 0644)
 			if err != nil {
 				log.Printf("[Problem:%d] os.WriteFile Error: %v File: %v", run.ProblemID, err, filePath)
 			} else {
@@ -232,6 +247,8 @@ func handleWorkerEnd(run *SolverRun) {
 					gitAdd(run.SolutionFileName)
 				}
 			}
+		} else {
+			log.Printf("[Problem:%d] No valid output found", run.ProblemID)
 		}
 	}
 }
@@ -239,6 +256,8 @@ func handleWorkerEnd(run *SolverRun) {
 func fileExists(filename string) bool {
 	info, err := os.Stat(filename)
 	if os.IsNotExist(err) {
+		return false
+	} else if err != nil {
 		return false
 	}
 	return !info.IsDir()
@@ -264,7 +283,7 @@ func mainRun() {
 		run := &SolverRun{
 			ProblemID:        problemID,
 			SolverPath:       conf.SolverPath,
-			Args:             nil,
+			Args:             strings.Split(conf.SolverArgs, " "),
 			Timeout:          conf.TimeoutPerProblem,
 			SolutionFileName: solutionFileName,
 			OnFinish:         handleWorkerEnd,
@@ -368,6 +387,7 @@ func main() {
 	log.Println("RepoRoot", conf.RepoRoot)
 	log.Println("SolverName", conf.SolverName)
 	log.Println("SolverPath", conf.SolverPath)
+	log.Println("SolverPath", conf.SolverArgs)
 	log.Println("ActionID", conf.ActionID)
 	log.Println("OutputDir", conf.OutputDir)
 	log.Println("MaxParallel", conf.MaxParallel)
