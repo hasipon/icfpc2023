@@ -27,6 +27,7 @@ type Config struct {
 	ActionID          string        `env:"ACTION_ID"`
 	SolverName        string        `env:"SOLVER_NAME"`
 	SolverPath        string        `env:"SOLVER_PATH"`
+	SolverArgs        string        `env:"SOLVER_ARGS"`
 	ProblemIDRange    string        `env:"PROBLEM_IDS" envDefault:"1"`
 	TimeoutEntire     time.Duration `env:"TIMEOUT_ENTIRE" envDefault:"1h"`
 	TimeoutPerProblem time.Duration `env:"TIMEOUT_PER_PROBLEM" envDefault:"1m"`
@@ -282,7 +283,7 @@ func mainRun() {
 		run := &SolverRun{
 			ProblemID:        problemID,
 			SolverPath:       conf.SolverPath,
-			Args:             nil,
+			Args:             strings.Split(conf.SolverArgs, " "),
 			Timeout:          conf.TimeoutPerProblem,
 			SolutionFileName: solutionFileName,
 			OnFinish:         handleWorkerEnd,
