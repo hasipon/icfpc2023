@@ -129,7 +129,7 @@ bool check(const Problem& problem, const vector<pair<double, double>>& placement
 
 pair<double, double> move(const Problem& problem, const vector<pair<double, double>>& placements, int idx) {
     double theta = rand() * 2 * M_PI / RAND_MAX;
-    double L = 0, R = 1;
+    double L = 0, R = 1 + (rand() * 9.0) / RAND_MAX;
     while (R - L >= 1e-4) {
         auto M = (L + R) / 2;
         auto x = placements[idx].first + M * cos(theta);
