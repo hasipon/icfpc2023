@@ -94,7 +94,6 @@ pub fn s_eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, t
     let mut nearest_d = std::f64::INFINITY;
     let mut nearest_dir = 0.0;
     let center = placements[index];
-
     if cache.placement_sights[index].is_none()
     {
         let mut nodes = Vec::new();
