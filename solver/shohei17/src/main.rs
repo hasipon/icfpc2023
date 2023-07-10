@@ -66,7 +66,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let mut max_result = placements;
     let musician_groups = SwapState::new(&problem).musician_groups;
 
-    for j in 1..7
+    for j in 1..6
     {
         for i in 1..125 * j
         {
