@@ -175,16 +175,18 @@ fn pull_placements<R:Rng>(
 
             let v = (vx * vx + vy * vy).sqrt();
 
-            for j in musician_groups.get(&problem.musicians[i]).unwrap()
-            {
-                if *j == i { continue; }
-                if rng.gen_bool(0.5) { continue; }
-                let p2 = placements[*j];
-                let dx = p2.x - p1.x;
-                let dy = p2.y - p1.y;
-                let d = (dx * dx + dy * dy).sqrt();
-                vx += dx / d * v / 3.0;
-                vy += dy / d * v / 3.0;
+            if grouping {
+                for j in musician_groups.get(&problem.musicians[i]).unwrap()
+                {
+                    if *j == i { continue; }
+                    if rng.gen_bool(0.5) { continue; }
+                    let p2 = placements[*j];
+                    let dx = p2.x - p1.x;
+                    let dy = p2.y - p1.y;
+                    let d = (dx * dx + dy * dy).sqrt();
+                    vx += dx / d * v / 2.0;
+                    vy += dy / d * v / 2.0;
+                }
             }
         }
         let rate = rng.gen_range(0.0..1.0);
