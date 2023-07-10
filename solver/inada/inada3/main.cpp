@@ -444,16 +444,17 @@ int main(int argc, char* argv[]) {
 #if LOCAL_DEBUG
     fs::current_path(R"(c:\projects\hasipon\icfpc2023\solver\inada)");
 #endif
-    int problem_id = atoi(getenv("PROBLEM_ID"));
 
-    Problem problem;
-    {
-        ifstream ifs(string(getenv("REPO_ROOT")) + "/problems.kyopro/" + to_string(problem_id) + ".kyopro");
-        readProblem(ifs, problem);
-    }
+    string name;
+    while (cin >> name) {
+        string problem_id = name.substr(0, name.find_first_of("-"));
+		Problem problem;
+        {
+            ifstream ifs(string(getenv("REPO_ROOT")) + "/problems.kyopro/" + problem_id + ".kyopro");
+			readProblem(ifs, problem);
+        }
 
-    if (getenv("SOLUTION") != nullptr) {
-        std::ifstream f(getenv("SOLUTION"));
+		ifstream f(string(getenv("REPO_ROOT")) + "/solutions/" + name);
         json data = json::parse(f);
         vector<pair<double, double>> placements;
         for (auto& e : data["placements"]) {
@@ -469,33 +470,10 @@ int main(int argc, char* argv[]) {
             writePlacementsJSON(cout, best_placements, res.second);
             if (!res.first) throw runtime_error("invalid placement");
             cerr << "score = " << sumScore(res.second) << endl;
+            cerr << "aaaaaaaaa" << endl;
+			ofstream ofs(string(getenv("REPO_ROOT")) + "/solutions/"  + problem_id + "-inada3flow-" + name);
+			writePlacementsJSON(ofs, best_placements, res.second);
+            ofs.close();
         }
     }
-
-    for (int i = 1; i < argc; i++) {
-        std::ifstream f(argv[i]);
-        json data = json::parse(f);
-        vector<pair<double, double>> placements;
-        for (auto& e : data["placements"]) {
-            double x, y;
-            e["x"].get_to(x);
-            e["y"].get_to(y);
-            placements.emplace_back(x, y);
-        }
-
-        auto best_placements = solve(problem, placements);
-        if (!best_placements.empty()) {
-            auto res = calcScore(problem, best_placements);
-            writePlacementsJSON(cout, best_placements, res.second);
-            if (!res.first) throw runtime_error("invalid placement");
-            cerr << "score = " << sumScore(res.second) << endl;
-        }
-    }
-
-#if LOCAL_DEBUG
-    {
-        ofstream ofs(to_string(problem_id) + "-inada3-" + to_string(sumScore(res.second)) + ".json");
-        writePlacementsJSON(ofs, placement, res.second);
-    }
-#endif
 }
