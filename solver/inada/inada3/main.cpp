@@ -649,7 +649,7 @@ vector<pair<double, double>> solve(const Problem& problem, const map<pair<double
 					if (e.cap == 0) {
 						if (e_p0 <= e.to && e.to < e_p0 + points.size()) {
 							const auto taste = i;
-							const auto& point = points[e_p0 + e.to];
+							const auto& point = points[e.to - e_p0];
 							if (used.find(point) == used.end()) {
 								used.emplace(point);
 								taste_to_point.emplace(taste, point);
