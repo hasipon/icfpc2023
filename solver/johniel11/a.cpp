@@ -46,13 +46,19 @@ using Placement = pair<double, double>;
 using Placements = vec<Placement>;
 using Volume = double;
 
-Placement operator - (Placement a, Placement b) { return {a.first - b.first, a.second - b.second}; }
+
 Placement operator += (Placement& a, Placement b) {
   a.first += b.first;
   a.second += b.second;
   return a;
 }
+Placement operator -= (Placement& a, Placement b) {
+  a.first -= b.first;
+  a.second -= b.second;
+  return a;
+}
 Placement operator + (Placement a, Placement b) { return a += b; }
+Placement operator - (Placement a, Placement b) { return a -= b; }
 
 namespace geo {
   typedef complex<double> point;
@@ -101,6 +107,13 @@ namespace geo {
   double distance_pp(pair<double, double> a, pair<double, double> b)
   {
     return distance_pp(a.first, a.second, b.first, b.second);
+  }
+
+  pair<double, double> rot(double x, double y, double th)
+  {
+    double a = x * cos(th) - y * sin(th);
+    double b = x * sin(th) + y * cos(th);
+    return make_pair(a, b);
   }
 };
 
@@ -384,6 +397,36 @@ pair<Placements, vec<Volume>> improve19(const Problem& problem)
       }
     }
   }
+
+  for (int i = 0; i < M; ++i) {
+    Placement origin = make_pair(problem.stageLeft, problem.stageBottom + problem.stageHeight);
+
+    auto mn = problem.stageBottom;
+    auto mx = problem.stageBottom + problem.stageHeight;
+    if (volumes[i] == 0.0 && placements[i].first < origin.first + 20 && abs(placements[i].second - mn) < abs(placements[i].second - mx)) {
+      // Placement p = placements[i] - origin;
+      // p = geo::rot(p.first, p.second, M_PI / 4);
+      // placements[i] = p + origin;
+      static int j = 1;
+      placements[i].first += (j++) * 30;
+    }
+  }
+
+  for (int _ = 0; _ < 10; ++_) {
+    for (int i = 0; i < M; ++i) {
+      if (volumes[i] == 0.0) {
+        while (true) {
+          Placement p = placements[i] + Placement(0, +5);
+          if (checkPlacements2(p.first, p.second, placements, i) && is_inside(problem, p)) {
+            placements[i] = p;
+          } else {
+            break;
+          }
+        }
+      }
+    }
+  }
+
   return {placements, volumes};
 }
 
