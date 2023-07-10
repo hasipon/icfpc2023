@@ -130,7 +130,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-    if max_score > init_score * 1.001
+    if max_score > init_score * 1.0035
     {
         let score = s_eval(&problem, &max_result, &mut volumes, &mut &mut SwapState::new(&problem));
         println!("end: {} {}:{} {} ", index, best_name, score, (score - init_score) / init_score);
