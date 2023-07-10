@@ -2,3 +2,4 @@
 project ("inada")
 add_subdirectory ("inada1")
 add_subdirectory ("inada2")
+add_subdirectory ("inada3")

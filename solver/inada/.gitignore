@@ -1,6 +1,5 @@
-testcase.json
-out/
-.vs/
-*.pam
+/out/
+/.vs/*
+!/.vs/launch.vs.json
 result.html
 
