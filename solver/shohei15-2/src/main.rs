@@ -8,7 +8,7 @@ mod data;
 mod s_state;
 use data::*;
 use s_state::*;
-use std::{fs::{self, File}, env};
+use std::{fs::{self, File}, env, collections::HashMap};
 use rand::{Rng, rngs::ThreadRng};
 use chrono::prelude::*;
 use std::io::Read;
@@ -41,7 +41,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // 最善解をとってくる
-    let mut best_score = -1.0;
+    let mut best_score = -10000000000000000000.0;
     let mut best_name:String = String::new();
 
     let paths = fs::read_dir("../../solutions/").unwrap();
@@ -60,12 +60,11 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         };
         let mut buf = String::new();
         submission.read_to_string(&mut buf)?;
-        let score:f64 = match serde_json::from_str::<Submission>(&buf)
+        let mut score:f64 = match serde_json::from_str::<Submission>(&buf)
         {
             Ok(submission) => submission.Success.submission.score.Success,
             Err(err) => {
-                //println!("error:{}", err);
-                continue;
+                0.0
             }
         };
         if score > best_score {
@@ -81,20 +80,26 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     println!("{}:{} {}", index, init_score, best_score);
     let mut max_score = init_score;
     let mut max_result = best.placements;
-
+    let musician_groups = SwapState::new(&problem).musician_groups;
     for j in 1..6
     {
-        for i in 1..180 * j
+        for i in 1..125 * j
         {
             let mut placements = max_result.clone();
-            let swaps = rng.gen_bool(0.04);
-            if !swaps || rng.gen_bool(0.9) 
+            let swaps = rng.gen_bool(0.01);
+            let mut pulls = false;
+            if !swaps || rng.gen_bool(0.8) 
             {
-                while !randomize(&mut placements, &problem, 600.0 / (i * 2) as f64, (i * 2) as f64, &mut rng)
+                pulls = rng.gen_bool(0.5);
+                if !pulls || rng.gen_bool(0.5) 
                 {
+                    while !randomize(&mut placements, &problem, 600.0 / (i * 2) as f64, (i * 2) as f64, &mut rng)
+                    {
+                    }
                 }
-                if rng.gen_bool(0.02) {
-                    pull_placements(&mut placements, &problem, 0.1);
+                
+                if pulls {
+                    pull_placements(&mut placements, &problem, 0.45 * rng.gen_range(0.1..1.0), &musician_groups, &mut rng);
                 }
                 for _ in 0..2000
                 {
@@ -103,6 +108,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
             }
+            
             if swaps {
                 try_swap(&problem, &mut placements, &mut rng, &mut SwapState::new(&problem));
             }
@@ -112,7 +118,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
             {
                 max_score = score;
                 max_result = placements;
-                println!("up: {} {} {},{}:{}:{} {}", index, best_name, j, i, swaps, score, (score - init_score) / init_score);
+                println!("up: {} {} {},{}:{}:{} {}", index, best_name, j, i, pulls, score, (score - init_score) / init_score);
             }
         }
     }
@@ -126,7 +132,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         {
             best_name.remove(0); 
         }
-        let name = format!("shohei15-2-{}-{}", seed, best_name);
+        let name = format!("shohei15-5-{}-{}", seed, best_name);
         fs::write(
             format!("../../solutions/{}-{}", index, name), 
             &answer_string
@@ -159,27 +165,51 @@ fn randomize<R:Rng>(
     }
     changed
 }
-fn pull_placements(
+fn pull_placements<R:Rng>(
     placements:&mut Vec<Point>,
     problem:&Problem,
-    power:f64) {
+    power:f64,
+    musician_groups:&HashMap<usize, Vec<usize>>,
+    rng:&mut R) {
+
     let mut max_v = 0.0;
     let mut vs = Vec::new();
+    let grouping = problem.extention.is_some() && rng.gen_bool(0.5);
     for i in 0..placements.len()
     {
         let mut p1 = placements[i];
         let index = problem.musicians[i] as usize;
         let mut vx = 0.0;
         let mut vy = 0.0;
-        for attendee in &problem.attendees
-        {
-            let dx = p1.x - attendee.x;
-            let dy = p1.y - attendee.y;
-            let d2 = dx * dx + dy * dy;
-            let speed = attendee.tastes[index] / d2;
-            vx -= dx * speed;
-            vy -= dy * speed;
+        if rng.gen_bool(0.03) {
+
+            for attendee in &problem.attendees
+            {
+                let dx = p1.x - attendee.x;
+                let dy = p1.y - attendee.y;
+                let d2 = dx * dx + dy * dy;
+                let speed = attendee.tastes[index] / d2;
+                vx -= dx * speed;
+                vy -= dy * speed;
+            }
+
+            let v = (vx * vx + vy * vy).sqrt();
+
+            for j in musician_groups.get(&problem.musicians[i]).unwrap()
+            {
+                if *j == i { continue; }
+                if rng.gen_bool(0.5) { continue; }
+                let p2 = placements[*j];
+                let dx = p2.x - p1.x;
+                let dy = p2.y - p1.y;
+                let d = (dx * dx + dy * dy).sqrt();
+                vx += dx / d * v / 3.0;
+                vy += dy / d * v / 3.0;
+            }
         }
+        let rate = rng.gen_range(0.0..1.0);
+        vx *= rate;
+        vy *= rate;
         let v = (vx * vx + vy * vy).sqrt();
         if v > max_v {
             max_v = v;
@@ -189,8 +219,9 @@ fn pull_placements(
     if max_v == 0.0 { return; }
     for (i, v) in vs.iter().enumerate()
     {
-        placements[i].x += v.0 / max_v * power;
-        placements[i].y += v.1 / max_v * power;
+        let rate = rng.gen_range(0.0..1.0);
+        placements[i].x += v.0 / max_v * power * rate;
+        placements[i].y += v.1 / max_v * power * rate;
     }
 }
 

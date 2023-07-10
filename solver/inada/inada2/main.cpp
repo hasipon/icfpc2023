@@ -1,4 +1,4 @@
-﻿#define LOCAL_DEBUG 1
+﻿#define LOCAL_DEBUG 0
 #define ENABLE_GV 0
 
 #define GV_JS
@@ -142,6 +142,9 @@ long long sumScore(const vector<long long>& score) {
     return sum;
 }
 
+void gvStage(const Problem& problem) {
+    gvRect(problem.stageLeft , problem.stageBottom, problem.stageWidth, problem.stageHeight, gvRGB(128,128,0));
+}
 
 void gvPlacements(const vector<pair<double, double> >& placements) {
     for (const auto& p : placements) {
@@ -149,70 +152,18 @@ void gvPlacements(const vector<pair<double, double> >& placements) {
     }
 }
 
-// 外周に沿った placement を返却する
-vector<pair<double, double>> makeEdgePlacement(const Problem& problem) {
-    const auto x = problem.stageLeft + 10.0;
-    const auto y = problem.stageBottom + 10.0;
-    const auto w = problem.stageWidth - 20.0;
-    const auto h = problem.stageHeight - 20.0;
-
-    const auto speed = 10.0;
-    auto dx = 0.0;
-    auto dy = speed;
-    auto left = x;
-    auto right = x + w;
-    auto top = y;
-    auto bottom = y + h;
-    auto cx = right;
-    auto cy = y;
-
-    vector<pair<double, double>> placements;
-    for (int i = 0; i < problem.musicians.size(); i++) {
-        placements.emplace_back(cx, cy);
-        cx += dx;
-        cy += dy;
-
-
-        if (cy > bottom) {
-            right -= 10.0;
-            cy = bottom;
-            cx = right;
-
-            dx = -speed;
-            dy = 0.0;
-        }
-
-        if (cx < left) {
-            bottom -= 10.0;
-            cx = left;
-            cy = bottom;
-
-            dy = -speed;
-            dx = 0.0;
-        }
-
-        if (cy < top) {
-            left += 10.0;
-            cy = top;
-            cx = left;
-
-            dx = speed;
-            dy = 0.0;
-        }
-
-        if (cx > right) {
-            top += 10.0;
-            cx = right;
-            cy = top;
-
-            dx = 0.0;
-            dy = speed;
-        }
+void gvCandidates(const multimap<double, pair<double, double> >& candidates) {
+    for (const auto& p : candidates) {
+        gvCircle(p.second.first, p.second.second, 5, gvRGB(255, 0, 0));
+        gvText(p.second.first, p.second.second, 3, "%.lf", p.first);
     }
-
-    return placements;
 }
 
+void gvHeatmap(const map<pair<double, double>, double>& heatmap) {
+    for (const auto& p : heatmap) {
+        gvCircle(p.first.first, p.first.second, 1, gvRGB(0, 255, 0));
+    }
+}
 
 pair<bool, long long> calcScoreWithCache(
     const Problem& problem,
@@ -220,11 +171,10 @@ pair<bool, long long> calcScoreWithCache(
     map<pair<double, double>, vector<long long>>& cache,
     bool ignore_factor
     ) {
-
     if (cache.empty()) {
-        if (placements.size() != problem.musicians.size()) {
-            return { false, 0 };
-        }
+		if (placements.size() != problem.musicians.size()) {
+			return { false, 0 };
+		}
         for (unsigned i = 0; i < placements.size(); i++) {
             auto [x, y] = placements[i];
             if (!(
@@ -328,32 +278,298 @@ long long swapDeltaScore(
     return score;
 }
 
-vector<pair<double, double>> solve(const Problem& problem) {
-    map<pair<double, double>, vector<long long>> cache;
-
-    auto placements = makeEdgePlacement(problem);
-    auto res = calcScoreWithCache(problem, placements, cache, false);
-    cerr << "calcScoreWithCache1: " << res.second << endl;
-    auto score = res.second;
-    for (int ite = 0; ite < 10; ite++) {
-        bool updated = false;
-        for (int i = 0; i < placements.size(); i++) {
-            for (int j = i + 1; j < placements.size(); j++) {
-                auto ds = swapDeltaScore(problem, placements, cache, false, i, j);
-                if (0 < ds) {
-                    score += ds;
-                    std::swap(placements[i], placements[j]);
-                    updated = true;
+vector<pair<double, double>> solve(const Problem& problem, const map<pair<double, double>, double>& heatmap) {
+    // step1. 外周に沿って配置, スコアに影響のないものは削除
+	set<pair<double, double>> fixed_points;
+	map<pair<double, double>, int> p_tastes;
+	map<pair<double, double>, long long> p_score;
+	map<int, int> free_tastes;
+    {
+        multimap<double, pair<double, double>> candidates;
+        auto add_candidate = [&](double x, double y) {
+            if (!(problem.stageBottom + 10 <= y && y <= problem.stageBottom + problem.stageHeight - 10 &&
+                problem.stageLeft + 10 <= x && x <= problem.stageLeft + problem.stageWidth - 10
+                )) {
+                cerr << "Reject" << x << " " << y << endl;
+                return;
+            }
+            auto rx = std::round(x / 10) * 10;
+            auto ry = std::round(y / 10) * 10;
+            double ddx[] = { 0, 10, -10, 0, 0, 10, 10, -10, -10 };
+            double ddy[] = { 0, 0, 0, 10, -10, 10, -10, 10, -10 };
+            for (int i = 0; i < 9; i++) {
+                auto it = heatmap.find(make_pair(rx + ddx[i], ry + ddy[i]));
+                if (it != heatmap.end()) {
+                    candidates.emplace(it->second, make_pair(x, y));
+                    return;
                 }
             }
+            cerr << " not found " << x << " " << y << endl;
+        };
+
+        const auto x = problem.stageLeft + 10.0;
+        const auto y = problem.stageBottom + 10.0;
+        const auto w = problem.stageWidth - 20.0;
+        const auto h = problem.stageHeight - 20.0;
+        const double nx = long long(w) / 10;
+        const double ny = long long(h) / 10;
+        const double ex = long long(w) % 10;
+        const double ey = long long(h) % 10;
+
+        const auto speed_x = 10.0 + ex / nx;
+        const auto speed_y = 10.0 + ey / ny;
+        const auto left = x;
+        const auto right = x + w;
+        const auto top = y;
+        const auto bottom = y + h;
+
+        auto dx = 0.0;
+        auto dy = speed_y;
+        auto cx = right;
+        auto cy = y;
+
+        for (;;) {
+            add_candidate(cx, cy);
+
+            cx += dx;
+            cy += dy;
+
+            if (cy > bottom) {
+                cy = bottom;
+                cx = right;
+
+                dx = -speed_x;
+                dy = 0.0;
+            }
+
+            if (cx < left) {
+                cx = left;
+                cy = bottom;
+
+                dy = -speed_y;
+                dx = 0.0;
+            }
+
+            if (cy < top) {
+                cy = top;
+                cx = left;
+
+                dx = speed_x;
+                dy = 0.0;
+            }
+
+            if (cx > right) {
+                cx = right;
+                cy = top;
+
+                dx = 0.0;
+                dy = speed_y;
+                break;
+            }
         }
-        cerr << "score:" << score << endl;
-        if (!updated) {
-            break;
+
+        vector<pair<double, double> > placements;
+        for (auto it = candidates.rbegin(); it != candidates.rend(); ++it) {
+            bool ok = true;
+            for (unsigned i = 0; i < placements.size(); i++) {
+                auto [x, y] = placements[i];
+                auto [x2, y2] = it->second;
+                if ((x - x2) * (x - x2) + (y - y2) * (y - y2) < 100) {
+                    ok = false;
+                    break;
+                }
+            }
+            if (ok) {
+                placements.push_back(it->second);
+                if (placements.size() == problem.musicians.size()) break;
+            }
         }
+
+        gvNewTime();
+        gvStage(problem);
+        gvPlacements(placements);
+
+        auto checkPlacements = [&](double x, double y) -> bool {
+            for (unsigned i = 0; i < placements.size(); ++i) {
+                auto [x2, y2] = placements[i];
+                if ((x - x2) * (x - x2) + (y - y2) * (y - y2) < 100) {
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        set<pair<double, double>> edge_points(placements.begin(), placements.end());
+
+        while (placements.size() < problem.musicians.size()) {
+            double x0 = problem.stageLeft + 10 + g_rand() % ((int)problem.stageWidth - 19);
+            double y0 = problem.stageBottom + 10 + g_rand() % ((int)problem.stageHeight - 19);
+            if (checkPlacements(x0, y0)) {
+                placements.emplace_back(x0, y0);
+            }
+        }
+
+        gvNewTime();
+        gvStage(problem);
+        gvPlacements(placements);
+
+        {
+            map<pair<double, double>, vector<long long>> cache;
+            auto res = calcScoreWithCache(problem, placements, cache, true);
+            auto score = res.second;
+            cerr << "score: " << score << endl;
+
+            bool updated = true;
+            while (updated) {
+                updated = false;
+                for (int i = 0; i < placements.size(); i++) {
+                    for (int j = i + 1; j < placements.size(); j++) {
+                        if (problem.musicians[i] == problem.musicians[j]) continue;
+                        auto ds = swapDeltaScore(problem, placements, cache, true, i, j);
+                        if (0 < ds) {
+                            score += ds;
+                            std::swap(placements[i], placements[j]);
+                            updated = true;
+                        }
+                    }
+                }
+            }
+            cerr << "score: " << score << endl;
+        }
+
+		gvNewTime();
+		auto res = calcScore(problem, placements);
+        for (int i = 0; i < placements.size(); i++) {
+            const auto& p = placements[i];
+            if (0 < res.second[i] && edge_points.find(p) != edge_points.end()) {
+                fixed_points.emplace(p);
+                p_tastes.emplace(p, problem.musicians[i]);
+                p_score.emplace(p, res.second[i]);
+                gvCircle(p.first, p.second, 5, gvRGB(0, 0, 255));
+                gvText(p.first, p.second, 3, "%.lf", double(res.second[i]));
+            } else {
+                free_tastes[problem.musicians[i]]++;
+            }
+        }
+
+		gvNewTime();
+		gvStage(problem);
+		gvPlacements(placements);
     }
 
-    return placements;
+    // step2. 1で得た人の周りに残りの人を配置
+	{
+        const auto w = problem.stageWidth - 20.0;
+        const auto h = problem.stageHeight - 20.0;
+        const double nx = long long(w) / 10;
+        const double ny = long long(h) / 10;
+        const double ex = long long(w) % 10;
+        const double ey = long long(h) % 10;
+        const auto speed_x = 10.0 + ex / nx;
+        const auto speed_y = 10.0 + ey / ny;
+
+        set<pair<double, double> > candidates_set;
+        auto add_candidate = [&](double x, double y) {
+			if (!(problem.stageBottom + 10 <= y && y <= problem.stageBottom + problem.stageHeight - 10 &&
+				problem.stageLeft + 10 <= x && x <= problem.stageLeft + problem.stageWidth - 10)) {
+                return;
+            }
+            candidates_set.emplace(x, y);
+        };
+
+        for (auto& fixed_p: fixed_points) {
+            auto [x, y] = fixed_p;
+
+            for (int t = 0; t < 2; t++) {
+                auto sx = t == 0 ? speed_x : -speed_x;
+                auto sy = t == 0 ? speed_y : -speed_y;
+				if (p_score.find(make_pair(x + sx, y)) != p_score.end()) {
+					auto cx = x + sx / 2;
+					auto dy = sqrt(100.0 - sx * sx / 4) + 0.01;
+					add_candidate(cx, y + dy);
+					add_candidate(cx, y - dy);
+				}
+
+				if (p_score.find(make_pair(x, y + sy)) != p_score.end()) {
+					auto cy = y + sy / 2;
+					auto dx = sqrt(100.0 - sx * sx / 4) + 0.01;
+					add_candidate(x + dx, cy);
+					add_candidate(x - dx, cy);
+				}
+            }
+        }
+
+		for (const auto& p : candidates_set) {
+			gvCircle(p.first, p.second, 5, gvRGB(0, 0, 255));
+		}
+
+		gvNewTime();
+		gvStage(problem);
+        // gvPlacements(placements);
+
+        vector<pair<double, double>> placements(fixed_points.begin(), fixed_points.end());
+        auto checkPlacements = [&](double x, double y) -> bool {
+            for (unsigned i = 0; i < placements.size(); ++i) {
+                auto [x2, y2] = placements[i];
+                if ((x - x2) * (x - x2) + (y - y2) * (y - y2) < 100) {
+                    return false;
+                }
+            }
+            return true;
+        };
+		gvNewTime();
+		gvStage(problem);
+        for (const auto& p : candidates_set) {
+            if (checkPlacements(p.first, p.second)) {
+                placements.push_back(p);
+                if (placements.size() == problem.musicians.size()) break;
+            }
+        }
+
+        while (placements.size() < problem.musicians.size()) {
+            double x0 = problem.stageLeft + 10 + g_rand() % ((int)problem.stageWidth - 19);
+            double y0 = problem.stageBottom + 10 + g_rand() % ((int)problem.stageHeight - 19);
+            if (checkPlacements(x0, y0)) {
+                placements.emplace_back(x0, y0);
+            }
+        }
+
+        {
+            map<pair<double, double>, vector<long long>> cache;
+            auto res = calcScoreWithCache(problem, placements, cache, true);
+            auto score = res.second;
+            cerr << "score: " << score << endl;
+
+            bool updated = true;
+            while (updated) {
+                updated = false;
+                for (int i = 0; i < placements.size(); i++) {
+                    for (int j = i + 1; j < placements.size(); j++) {
+                        if (problem.musicians[i] == problem.musicians[j]) continue;
+                        auto ds = swapDeltaScore(problem, placements, cache, true, i, j);
+                        if (0 < ds) {
+                            score += ds;
+                            std::swap(placements[i], placements[j]);
+                            updated = true;
+                        }
+                    }
+                }
+            }
+            cerr << "score: " << score << endl;
+        }
+
+		gvNewTime();
+		gvStage(problem);
+        gvPlacements(placements);
+		return placements;
+	}
+
+	gvNewTime();
+	gvClose();
+    exit(0);
+
+	// vector <pair<double, double>> dummy;
+    // return dummy;
 }
 
 void readProblem(std::istream& is, Problem& problem) {
@@ -396,30 +612,43 @@ void writePlacementsJSON(std::ostream& os, const std::vector<pair<double, double
     os << "]}" << endl;
 }
 
+void readHeatmap(std::istream& is, std::map<pair<double, double>, double>& heatmap) {
+    string str;
+    while (std::getline(is, str)) {
+        double score, x, y;
+        if (sscanf_s(str.c_str(), "%lf,%lf,%lf", &score, &x, &y) == 3) {
+            heatmap[make_pair(x, y)] = score;
+        }
+    }
+}
+
 int main(int argc, char* argv[]) {
 #if LOCAL_DEBUG
     fs::current_path(R"(c:\projects\hasipon\icfpc2023\solver\inada)");
+#endif
+    int problem_id = atoi(getenv("PROBLEM_ID"));
 
-    int problem_id = 1;
     Problem problem;
     {
-        ifstream ifs("../../problems.kyopro/" + to_string(problem_id) + ".kyopro");
+        ifstream ifs(string(getenv("REPO_ROOT")) + "/problems.kyopro/" + to_string(problem_id) + ".kyopro");
         readProblem(ifs, problem);
     }
-#else
 
-    Problem problem;
-    readProblem(cin, problem);
-#endif
+    std::map<pair<double, double>, double> heatmap;
+    {
+        ifstream ifs(string(getenv("REPO_ROOT")) + "/heatmap/" + to_string(problem_id) + ".csv");
+        readHeatmap(ifs, heatmap);
+    }
 
-    auto placement = solve(problem);
+    auto placement = solve(problem, heatmap);
+    gvStage(problem);
     gvPlacements(placement);
 
     auto res = calcScore(problem, placement);
     writePlacementsJSON(cout, placement, res.second);
 #if LOCAL_DEBUG
     {
-        ofstream ofs(to_string(problem_id) + "-inada1-" + to_string(sumScore(res.second)) + ".json");
+        ofstream ofs(to_string(problem_id) + "-inada2-" + to_string(sumScore(res.second)) + ".json");
         writePlacementsJSON(ofs, placement, res.second);
     }
 #endif

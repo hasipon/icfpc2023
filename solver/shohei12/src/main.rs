@@ -19,7 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let timestamp = Utc::now().timestamp();
 
     let args: Vec<String> = env::args().collect();
-    let id = if args.len() <= 1 { "9" } else { &args[1] };
+    let id = if args.len() <= 1 { "2" } else { &args[1] };
     solve(id, timestamp)?;
 
     Ok(())
@@ -32,7 +32,8 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let y = problem.stage_bottom_left.1 + 10.0;
     let w = problem.stage_width - 20.0;
     let h = problem.stage_height - 20.0;
-    let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(7);
+    let seed = rand::thread_rng().gen_range(0..20000);
+    let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(seed);
     
     let mut volumes = vec![1.0; problem.musicians.len()];
     let iindex:i64 = index.parse()?;
@@ -59,9 +60,14 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let score = s_eval(&problem, &placements, &mut volumes, &mut swap_state);
     println!("{}:{}", index, score);
 
+    for center in &placements
+    {
+        if center.x.is_nan() { panic!("x NaN!!!!!! {} {:?}", index, placements); }
+        if center.y.is_nan() { panic!("y NaN!!!!!! {} {:?}", index, placements); }
+    }
     let answer:Answer = Answer { placements, volumes };
     let answer_string = serde_json::to_string(&answer)?;
-    let name = "shohei12-2";
+    let name = format!("shohei12-4-{}", seed);
     fs::write(
         format!("../../solutions/{}-{}.json", index, name), 
         &answer_string
