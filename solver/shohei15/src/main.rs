@@ -87,24 +87,24 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         for i in 20..100 * j
         {
             let mut placements = max_result.clone();
-            while !randomize(&mut placements, &problem, 300.0 / (i * 2) as f64, (i * 2) as f64, &mut rng)
+            let swaps = rng.gen_bool(0.04);
+            if !swaps || rng.gen_bool(0.95) 
             {
-            }
-            if rng.gen_bool(0.02) {
-                pull_placements(&mut placements, &problem, 0.1);
-            }
-            for _ in 0..2000
-            {
-                if separate_placements(x, y, w, h, &mut placements, &mut rng) {
-                    break;
+                while !randomize(&mut placements, &problem, 300.0 / (i * 2) as f64, (i * 2) as f64, &mut rng)
+                {
+                }
+                if rng.gen_bool(0.02) {
+                    pull_placements(&mut placements, &problem, 0.1);
+                }
+                for _ in 0..2000
+                {
+                    if separate_placements(x, y, w, h, &mut placements, &mut rng) {
+                        break;
+                    }
                 }
             }
-            if rng.gen_bool(0.04) {
-                let score = s_eval(&problem, &placements, &mut volumes);
-                println!("ss: {} {}:{} {} ", index, best_name, score, (score - init_score) / init_score);
+            if swaps {
                 try_swap(&problem, &mut placements, &mut rng, &mut SwapState::new(&problem));
-                let score = s_eval(&problem, &placements, &mut volumes);
-                println!("se: {} {}:{} {} ", index, best_name, score, (score - init_score) / init_score);
             }
             
             let score = s_eval(&problem, &placements, &mut volumes);
@@ -112,7 +112,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
             {
                 max_score = score;
                 max_result = placements;
-                println!("up: {} {} {},{}:{} {} ", index, best_name, j, i, score, (score - init_score) / init_score);
+                println!("up: {} {} {},{}:{}:{} {}", index, best_name, j, i, swaps, score, (score - init_score) / init_score);
             }
         }
     }
