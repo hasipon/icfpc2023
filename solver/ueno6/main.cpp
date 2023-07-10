@@ -313,6 +313,7 @@ vector<pair<int, int>> solve(const Problem& problem) {
 
     vector<int> progress(gridss.size());
     vector<int> used(gridss.size());
+    vector<long long> last_score(gridss.size());
 
     set<pair<int, int>> placed;
 
@@ -324,9 +325,6 @@ vector<pair<int, int>> solve(const Problem& problem) {
             progress = used;
         }
          */
-
-        // ある taste について 上位M件の配置を試す
-        constexpr int M = 3;
 
         // TODO: 未実装。これらの盤面を評価して、B件だけとっておく。
         // constexpr int B = 3;
@@ -352,18 +350,21 @@ vector<pair<int, int>> solve(const Problem& problem) {
         sort(taste_candidates.begin(), taste_candidates.end(), greater<>());
 
         // taste は heatmap からくる良さそうなものを test_trials 個 試す
-        constexpr int taste_trials = 50;
-        using score_taste_id_progress_id = tuple<double, int, int>;
+        //constexpr int taste_trials = 50;
+        using score_taste_id_progress_id = tuple<double, double, int, int>;
         vector<score_taste_id_progress_id> candidates;
 
-        for (int taste_trial = 0; taste_trial < taste_trials && taste_trial < taste_candidates.size(); taste_trial++) {
+        for (int taste_trial = 0; taste_trial < taste_candidates.size(); taste_trial++) {
             const auto [taste_score, j] = taste_candidates[taste_trial];
             if (taste_score == -1e10) {
                 continue;
             }
 
             // calcScoreForOneTaste は ある taste に関する貢献しか計算しないので、差分で ranking して top1 以外の taste が選ばれやすくする
-            auto previous_score = calcScoreForOneTaste(problem, musicianByTaste, res, j, grid_index);
+            auto previous_score = last_score[j];
+
+            // ある taste について 上位M件の配置を試す
+            constexpr int M = 1;
 
             int found_count = 0;
             for (int jj = progress[j]; jj < gridss[j].size() && found_count < M; jj++) {
@@ -390,19 +391,20 @@ vector<pair<int, int>> solve(const Problem& problem) {
                         grid_index[x_in_grid][y_in_grid].pop_back();
                     }
 
-                    candidates.emplace_back(score - previous_score, j, jj);
+                    candidates.emplace_back(score - previous_score, score, j, jj);
                     res[musicianByTaste[j][used[j]]] = make_pair(-1, -1);
                     found_count++;
                 }
             }
         }
 
-        const auto& [score, taste_id, progress_id]  = *max_element(candidates.begin(), candidates.end());
+        const auto& [score_diff, score, taste_id, progress_id]  = *max_element(candidates.begin(), candidates.end());
         const auto& [_, point] = gridss[taste_id][progress_id];
         res[musicianByTaste[taste_id][used[taste_id]]] = point;
         placed.insert(point);
         used[taste_id]++;
         progress[taste_id] = progress_id + 1;
+        last_score[taste_id] = score;
 
         {
             auto x_in_grid = int(point.first / GRID);
