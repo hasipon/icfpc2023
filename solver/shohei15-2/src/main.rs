@@ -82,9 +82,9 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let mut max_score = init_score;
     let mut max_result = best.placements;
 
-    for j in 1..4
+    for j in 1..6
     {
-        for i in 20..100 * j
+        for i in 20..170 * j
         {
             let mut placements = max_result.clone();
             let swaps = rng.gen_bool(0.04);
