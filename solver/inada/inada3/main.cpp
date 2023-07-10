@@ -101,7 +101,7 @@ struct PrimalDual {
                 if (e.isrev) continue;
                 auto& rev_e = graph[e.to][e.rev];
                 if (e.cap == 0)
-					cerr << i << "->" << e.to << " (flow: " << rev_e.cap << "/" << rev_e.cap + e.cap << ")" << endl;
+                    cerr << i << "->" << e.to << " (flow: " << rev_e.cap << "/" << rev_e.cap + e.cap << ")" << endl;
             }
         }
     }
@@ -243,9 +243,9 @@ pair<bool, long long> calcScoreWithCache(
     map<pair<double, double>, vector<long long>>& cache) {
     if (!problem.pillars.empty()) throw 1;
     if (cache.empty()) {
-		if (placements.size() != problem.musicians.size()) {
-			return { false, 0 };
-		}
+        if (placements.size() != problem.musicians.size()) {
+            return { false, 0 };
+        }
         for (unsigned i = 0; i < placements.size(); i++) {
             auto [x, y] = placements[i];
             if (!(
@@ -353,69 +353,69 @@ vector<pair<double, double>> solve(const Problem& problem) {
     }
 
     // Prev score
-	map<pair<double, double>, vector<long long>> cache;
-	auto res = calcScoreWithCache(problem, placements, cache);
-	auto score = res.second;
-	cerr << "score: " << score << endl;
+    map<pair<double, double>, vector<long long>> cache;
+    auto res = calcScoreWithCache(problem, placements, cache);
+    auto score = res.second;
+    cerr << "score: " << score << endl;
 
-	// Flow
-	vector<int> taste_count(problem.attendees[0].tastes.size());
-	for (int taste : problem.musicians) {
-		taste_count[taste]++;
-	}
-	auto points(placements);
-	sort(points.begin(), points.end());
-	PrimalDual<int, double> g(problem.attendees[0].tastes.size() + points.size() + 2);
-	const int e_p0 = problem.attendees[0].tastes.size();
-	const int e_s = problem.attendees[0].tastes.size() + placements.size();
-	const int e_t = e_s + 1;
+    // Flow
+    vector<int> taste_count(problem.attendees[0].tastes.size());
+    for (int taste : problem.musicians) {
+        taste_count[taste]++;
+    }
+    auto points(placements);
+    sort(points.begin(), points.end());
+    PrimalDual<int, double> g(problem.attendees[0].tastes.size() + points.size() + 2);
+    const int e_p0 = problem.attendees[0].tastes.size();
+    const int e_s = problem.attendees[0].tastes.size() + placements.size();
+    const int e_t = e_s + 1;
 
-	int sum_taste_count = 0;
-	// s -> taste
-	for (int i = 0; i < problem.attendees[0].tastes.size(); i++) {
-		g.add_edge(e_s, i, taste_count[i], 0);
-		sum_taste_count += taste_count[i];
-	}
-	cerr << "sum_taste_count" << sum_taste_count << endl;
+    int sum_taste_count = 0;
+    // s -> taste
+    for (int i = 0; i < problem.attendees[0].tastes.size(); i++) {
+        g.add_edge(e_s, i, taste_count[i], 0);
+        sum_taste_count += taste_count[i];
+    }
+    cerr << "sum_taste_count" << sum_taste_count << endl;
 
-	// taste -> point
-	for (int i = 0; i < problem.attendees[0].tastes.size(); i++) {
-		for (int j = 0; j < points.size(); ++j) {
-			g.add_edge(i, e_p0 + j, 1, -getPointTasteScore(points[j], i, cache));
-		}
-	}
+    // taste -> point
+    for (int i = 0; i < problem.attendees[0].tastes.size(); i++) {
+        for (int j = 0; j < points.size(); ++j) {
+            g.add_edge(i, e_p0 + j, 1, -getPointTasteScore(points[j], i, cache));
+        }
+    }
 
-	// point -> t
-	for (int i = 0; i < points.size(); i++) {
-		g.add_edge(e_p0 + i, e_t, 1, 0);
-	}
+    // point -> t
+    for (int i = 0; i < points.size(); i++) {
+        g.add_edge(e_p0 + i, e_t, 1, 0);
+    }
 
-	auto min_cost = g.min_cost_flow(e_s, e_t, points.size());
-	cerr << "-min_cost:" << -long long(min_cost) << endl;
+    auto min_cost = g.min_cost_flow(e_s, e_t, points.size());
+    cerr << "-min_cost:" << -long long(min_cost) << endl;
 
-	multimap<int, pair<double, double>> taste_to_point;
-	for (int i = 0; i < problem.attendees[0].tastes.size(); i++) {
-		for (auto& e : g.graph[i]) {
-			if (e.isrev) continue;
-			if (e.cap == 0 && e_p0 <= e.to && e.to < e_p0 + points.size()) {
-				const auto taste = i;
-				const auto& point = points[e.to - e_p0];
+    multimap<int, pair<double, double>> taste_to_point;
+    for (int i = 0; i < problem.attendees[0].tastes.size(); i++) {
+        for (auto& e : g.graph[i]) {
+            if (e.isrev) continue;
+            if (e.cap == 0 && e_p0 <= e.to && e.to < e_p0 + points.size()) {
+                const auto taste = i;
+                const auto& point = points[e.to - e_p0];
                 taste_to_point.emplace(taste, point);
-			}
-		}
-	}
+            }
+        }
+    }
 
-	vector<pair<double, double> > best_placements(problem.musicians.size());
-	for (int i = 0; i < problem.musicians.size(); ++i) {
-		auto it = taste_to_point.find(problem.musicians[i]);
-		if (it == taste_to_point.end()) {
-			throw 1;
-		}
-		best_placements[i] = it->second;
-		taste_to_point.erase(it);
-	}
+    vector<pair<double, double> > best_placements(problem.musicians.size());
+    for (int i = 0; i < problem.musicians.size(); ++i) {
+        auto it = taste_to_point.find(problem.musicians[i]);
+        if (it == taste_to_point.end()) {
+            throw 1;
+        }
+        best_placements[i] = it->second;
+        taste_to_point.erase(it);
+    }
 
-	return best_placements;
+    return best_placements;
 }
 
 void readProblem(std::istream& is, Problem& problem) {
