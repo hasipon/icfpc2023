@@ -10,7 +10,7 @@ mod g_state;
 use data::*;
 use s_state::*;
 use g_state::*;
-use std::{fs, env};
+use std::{fs, env, collections::HashMap};
 use rand::Rng;
 use chrono::prelude::*;
 
@@ -93,12 +93,12 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
             }
-            
+            let mut swap_state = SwapState::new(&problem);
             if swaps {
-                try_swap(&problem, &mut placements, &mut rng, &mut SwapState::new(&problem));
+                try_swap(&problem, &mut placements, &mut rng, &mut swap_state);
             }
             
-            let score = s_eval(&problem, &placements, &mut volumes);
+            let score = s_eval(&problem, &placements, &mut volumes, &mut swap_state);
             if score > max_score
             {
                 max_score = score;
@@ -108,13 +108,13 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    let placement = max_result;
+    let placements = max_result;
     let score = s_eval(&problem, &placements, &mut volumes, &mut swap_state);
-    println!("{}:{}", index, score);
+    println!("end:{}:{}", index, score);
 
     let answer:Answer = Answer { placements, volumes };
     let answer_string = serde_json::to_string(&answer)?;
-    let name = format!("shohei12-4-{}", seed);
+    let name = format!("shohei17-{}", seed);
     fs::write(
         format!("../../solutions/{}-{}.json", index, name), 
         &answer_string
