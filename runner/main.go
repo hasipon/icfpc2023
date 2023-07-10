@@ -12,7 +12,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -102,7 +101,7 @@ func (run *SolverRun) Run(ctx context.Context) {
 		}
 		defer stdinWriter.Close()
 
-		stdoutFilePath := path.Join(conf.OutputDir, fmt.Sprintf("%d-%s-stdout.txt", run.ProblemID, filepath.Base(run.SolverPath)))
+		stdoutFilePath := path.Join(conf.OutputDir, fmt.Sprintf("%d-%s-stdout.txt", run.ProblemID, conf.SolverName))
 		stdoutFile, err := os.OpenFile(stdoutFilePath, os.O_RDWR|os.O_CREATE, 0644)
 		if err != nil {
 			return errors.New(fmt.Sprintf("execCommand OpenFile Error: %v", err))
@@ -110,7 +109,7 @@ func (run *SolverRun) Run(ctx context.Context) {
 		defer stdoutFile.Close()
 		run.StdOutPath = stdoutFilePath
 
-		stderrFilePath := path.Join(conf.OutputDir, fmt.Sprintf("%d-%s-stderr.txt", run.ProblemID, filepath.Base(run.SolverPath)))
+		stderrFilePath := path.Join(conf.OutputDir, fmt.Sprintf("%d-%s-stderr.txt", run.ProblemID, conf.SolverName))
 		stderrFile, err := os.OpenFile(stderrFilePath, os.O_RDWR|os.O_CREATE, 0644)
 		if err != nil {
 			return errors.New(fmt.Sprintf("execCommand OpenFile Error: %v", err))
