@@ -84,13 +84,13 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
 
     for j in 1..6
     {
-        for i in 20..170 * j
+        for i in 1..180 * j
         {
             let mut placements = max_result.clone();
             let swaps = rng.gen_bool(0.04);
             if !swaps || rng.gen_bool(0.9) 
             {
-                while !randomize(&mut placements, &problem, 300.0 / (i * 2) as f64, (i * 2) as f64, &mut rng)
+                while !randomize(&mut placements, &problem, 600.0 / (i * 2) as f64, (i * 2) as f64, &mut rng)
                 {
                 }
                 if rng.gen_bool(0.02) {
@@ -126,7 +126,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         {
             best_name.remove(0); 
         }
-        let name = format!("shohei15-{}-{}", seed, best_name);
+        let name = format!("shohei15-2-{}-{}", seed, best_name);
         fs::write(
             format!("../../solutions/{}-{}", index, name), 
             &answer_string
