@@ -28,7 +28,7 @@
             {% for p in problems.values() %}
                 <tr>
                     <td class="text-center" id="{{ p.id }}">
-                        <a href="http://35.221.99.118/repo/problem.json/{{ p.id }}.json">{{ p.name }}</a> <br>
+                        <a href="http://34.146.44.95/repo/problem.json/{{ p.id }}.json">{{ p.name }}</a> <br>
                         <a href="/solutions/{{ p.id }}">回答一覧 ({{solutions[p.id] | length }} 件)</a><br>
                         {% if p.heatmap_image_path  %}
                             <a href={{ p.heatmap_image_path  }}>heatmap</a><br>
