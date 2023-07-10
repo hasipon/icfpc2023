@@ -16,7 +16,8 @@
 #include <cassert>
 #include <queue>
 #include <algorithm>
-
+#include "json.hpp"
+using json = nlohmann::json;
 using namespace std;
 namespace fs = std::filesystem;
 
@@ -332,26 +333,7 @@ long long getPointTasteScore(pair<double, double> point, int taste, map<pair<dou
     return cache[point][taste];
 }
 
-vector<pair<double, double>> solve(const Problem& problem) {
-    // random placements
-    vector<pair<double, double>> placements;
-    auto checkPlacements = [&placements](double x, double y) -> bool {
-        for (unsigned i = 0; i < placements.size(); ++i) {
-            auto [x2, y2] = placements[i];
-            if ((x - x2) * (x - x2) + (y - y2) * (y - y2) < 100) {
-                return false;
-            }
-        }
-        return true;
-    };
-    while (placements.size() < problem.musicians.size()) {
-        double x0 = problem.stageLeft + 10 + g_rand() % ((int)problem.stageWidth - 19);
-        double y0 = problem.stageBottom + 10 + g_rand() % ((int)problem.stageHeight - 19);
-        if (checkPlacements(x0, y0)) {
-            placements.emplace_back(x0, y0);
-        }
-    }
-
+vector<pair<double, double>> solve(const Problem& problem, vector<pair<double, double>> placements) {
     // Prev score
     map<pair<double, double>, vector<long long>> cache;
     auto res = calcScoreWithCache(problem, placements, cache);
@@ -470,18 +452,50 @@ int main(int argc, char* argv[]) {
         readProblem(ifs, problem);
     }
 
-    auto placement = solve(problem);
-    gvStage(problem);
-    gvPlacements(placement);
+    if (getenv("SOLUTION") != nullptr) {
+        std::ifstream f(getenv("SOLUTION"));
+		json data = json::parse(f);
+        vector<pair<double, double>> placements;
+        for (auto& e : data["placements"]) {
+            double x, y;
+            e["x"].get_to(x);
+            e["y"].get_to(y);
+            placements.emplace_back(x, y);
+        }
 
-    auto res = calcScore(problem, placement);
-    writePlacementsJSON(cout, placement, res.second);
+		auto best_placements = solve(problem, placements);
+        if (!best_placements.empty()) {
+			auto res = calcScore(problem, best_placements);
+			writePlacementsJSON(cout, best_placements, res.second);
+			if (!res.first) throw runtime_error("invalid placement");
+			cerr << "score = " << sumScore(res.second) << endl;
+        }
+    }
+
+	for (int i = 1; i < argc; i++) {
+		std::ifstream f(argv[i]);
+		json data = json::parse(f);
+        vector<pair<double, double>> placements;
+        for (auto& e : data["placements"]) {
+            double x, y;
+            e["x"].get_to(x);
+            e["y"].get_to(y);
+            placements.emplace_back(x, y);
+        }
+
+		auto best_placements = solve(problem, placements);
+        if (!best_placements.empty()) {
+			auto res = calcScore(problem, best_placements);
+			writePlacementsJSON(cout, best_placements, res.second);
+			if (!res.first) throw runtime_error("invalid placement");
+			cerr << "score = " << sumScore(res.second) << endl;
+        }
+	}
+
 #if LOCAL_DEBUG
     {
         ofstream ofs(to_string(problem_id) + "-inada3-" + to_string(sumScore(res.second)) + ".json");
         writePlacementsJSON(ofs, placement, res.second);
     }
 #endif
-    if (!res.first) throw runtime_error("invalid placement");
-    cerr << "score = " << sumScore(res.second) << endl;
 }
