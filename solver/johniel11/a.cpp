@@ -370,14 +370,16 @@ pair<Placements, vec<Volume>> improve19(const Problem& problem)
     each (volume, volumes) assert(sin >> volume);
   }
 
-  for (int i = 0; i < M; ++i) {
-    if (volumes[i] == 0.0) {
-      while (true) {
-        Placement p = placements[i] + Placement(0, -5);
-        if (checkPlacements2(p.first, p.second, placements, i) && is_inside(problem, p)) {
-          placements[i] = p;
-        } else {
-          break;
+  for (int _ = 0; _ < 100; ++_) {
+    for (int i = 0; i < M; ++i) {
+      if (volumes[i] == 0.0) {
+        while (true) {
+          Placement p = placements[i] + Placement(0, +5);
+          if (checkPlacements2(p.first, p.second, placements, i) && is_inside(problem, p)) {
+            placements[i] = p;
+          } else {
+            break;
+          }
         }
       }
     }
