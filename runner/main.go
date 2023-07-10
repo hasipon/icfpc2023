@@ -387,6 +387,7 @@ func main() {
 	log.Println("RepoRoot", conf.RepoRoot)
 	log.Println("SolverName", conf.SolverName)
 	log.Println("SolverPath", conf.SolverPath)
+	log.Println("SolverPath", conf.SolverArgs)
 	log.Println("ActionID", conf.ActionID)
 	log.Println("OutputDir", conf.OutputDir)
 	log.Println("MaxParallel", conf.MaxParallel)
