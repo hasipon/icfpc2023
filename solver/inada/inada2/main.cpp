@@ -1,5 +1,5 @@
-﻿#define LOCAL_DEBUG 1
-#define ENABLE_GV 1
+﻿#define LOCAL_DEBUG 0
+#define ENABLE_GV 0
 
 #define GV_JS
 #include "gv.hpp"
