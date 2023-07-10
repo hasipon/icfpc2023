@@ -8,7 +8,7 @@ mod data;
 mod s_state;
 use data::*;
 use s_state::*;
-use std::{fs::{self, File}, env};
+use std::{fs::{self, File}, env, process};
 use rand::{Rng, rngs::ThreadRng};
 use chrono::prelude::*;
 use std::io::Read;
@@ -18,14 +18,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let timestamp = Utc::now().timestamp();
 
     let args: Vec<String> = env::args().collect();
-    let id = if args.len() <= 1 { "9" } else { &args[1] };
-    solve(id, timestamp)?;
+    let id = match env::var("PROBLEM_ID") {
+        Ok(val) => val,
+        Err(err) => {
+            println!("{}: {}", err, "PROBLEM_ID");
+            process::exit(1);
+        },
+    };
+    solve(&id, timestamp)?;
 
     Ok(())
 }
 
 fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
-    let data:String = fs::read_to_string(format!("../../../problem.json/{}.json", index))?;
+    let repoRoot = match env::var("REPO_ROOT") {
+        Ok(val) => val,
+        Err(err) => {
+            println!("{}: {}", err, "REPO_ROOT");
+            process::exit(1);
+        },
+    };
+    let data:String = fs::read_to_string(format!("{}/problem.json/{}.json", repoRoot, index))?;
     let mut problem:Problem = serde_json::from_str(&data)?;
     let x = problem.stage_bottom_left.0 + 10.0;  
     let y = problem.stage_bottom_left.1 + 10.0;
@@ -41,7 +54,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // 最善解をとってくる
-    let mut best_file = File::open(format!("../../../solutions/{}-shiota13.json", index))?;
+    let mut best_file = File::open(format!("{}/solutions/{}-shiota13.json", repoRoot, index))?;
     let mut buf = String::new();
     best_file.read_to_string(&mut buf)?;
     let mut best:Answer = serde_json::from_str(&buf)?;
@@ -88,21 +101,19 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
             break;
         }
     }
-    if max_score > init_score * 1.001
-    {
-        let score = s_eval(&problem, &max_result, &mut volumes);
-        let answer:Answer = Answer { placements:max_result, volumes };
-        let answer_string = serde_json::to_string(&answer)?;
-        let name = format!("shohei15-2-{}-{}", seed, "shiota-13");
-        fs::write(
-            format!("../../../solutions/{}-{}.json", index, name),
-            &answer_string
-        )?;
-        fs::write(
-            format!("../../../solutions/{}-{}.myeval", index, name),
-            &score.to_string()
-        )?;
-    }
+    let score = s_eval(&problem, &max_result, &mut volumes);
+    let answer:Answer = Answer { placements:max_result, volumes };
+    let answer_string = serde_json::to_string(&answer)?;
+    let name = format!("shohei15-2-{}-{}", seed, "shiota-13");
+    println!("{}", answer_string);
+    // fs::write(
+    //     format!("../../../solutions/{}-{}.json", index, name),
+    //     &answer_string
+    // )?;
+    // fs::write(
+    //     format!("../../../solutions/{}-{}.myeval", index, name),
+    //     &score.to_string()
+    // )?;
     Ok(())
 }
 

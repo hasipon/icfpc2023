@@ -1,7 +1,3 @@
-#!/bin/bash
-
-for f in $(ls ../../problems.kyopro/*.kyopro);
-do
-    cat $f | ./a.out > ../../solutions/$(basename $f .kyopro)-ueno5.json 2>$(basename $f .kyopro).err &
-done
-wait
+g++ -Ofast -std=c++14 main.cpp
+./a.out > $REPO_ROOT/solutions/${PROBLEM_ID}-shiota13.json
+cd shohei15-2 && cargo run --release
