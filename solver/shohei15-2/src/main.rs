@@ -8,7 +8,7 @@ mod data;
 mod s_state;
 use data::*;
 use s_state::*;
-use std::{fs::{self, File}, env, collections::HashMap};
+use std::{fs::{self, File}, env, collections::{HashMap, HashSet}};
 use rand::{Rng, rngs::ThreadRng};
 use chrono::prelude::*;
 use std::io::Read;
@@ -76,14 +76,18 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let mut buf = String::new();
     best_file.read_to_string(&mut buf)?;
     let mut best:Answer = serde_json::from_str(&buf)?;
-    let init_score = s_eval(&problem, &best.placements, &mut volumes);
+    
+    let mut swap_state = SwapState::new(&problem);
+    let init_score = s_eval(&problem, &best.placements, &mut volumes, &mut swap_state);
+    let musician_groups = swap_state.musician_groups;
+    let active_attendees: HashSet<usize> = init_active_attendees(&problem, &best.placements);
+    
     println!("{}:{} {}", index, init_score, best_score);
     let mut max_score = init_score;
     let mut max_result = best.placements;
-    let musician_groups = SwapState::new(&problem).musician_groups;
-    for j in 1..6
+    for j in 1..7
     {
-        for i in 1..125 * j
+        for i in 1..150 * j
         {
             let mut placements = max_result.clone();
             let swaps = rng.gen_bool(0.01);
@@ -99,7 +103,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
                 }
                 
                 if pulls {
-                    pull_placements(&mut placements, &problem, 0.45 * rng.gen_range(0.1..1.0), &musician_groups, &mut rng);
+                    pull_placements(&mut placements, &problem, 0.45 * rng.gen_range(0.1..1.0), &musician_groups, &active_attendees, &mut rng);
                 }
                 for _ in 0..2000
                 {
@@ -109,11 +113,12 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
             
+            let mut swap_state = SwapState::new(&problem);
             if swaps {
-                try_swap(&problem, &mut placements, &mut rng, &mut SwapState::new(&problem));
+                try_swap(&problem, &mut placements, &mut rng, &mut swap_state);
             }
             
-            let score = s_eval(&problem, &placements, &mut volumes);
+            let score = s_eval(&problem, &placements, &mut volumes, &mut swap_state);
             if score > max_score
             {
                 max_score = score;
@@ -124,7 +129,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     }
     if max_score > init_score * 1.001
     {
-        let score = s_eval(&problem, &max_result, &mut volumes);
+        let score = s_eval(&problem, &max_result, &mut volumes, &mut &mut SwapState::new(&problem));
         println!("end: {} {}:{} {} ", index, best_name, score, (score - init_score) / init_score);
         let answer:Answer = Answer { placements:max_result, volumes };
         let answer_string = serde_json::to_string(&answer)?;
@@ -132,7 +137,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         {
             best_name.remove(0); 
         }
-        let name = format!("shohei15-5-{}-{}", seed, best_name);
+        let name = format!("shohei15-6-{}-{}", seed, best_name);
         fs::write(
             format!("../../solutions/{}-{}", index, name), 
             &answer_string
@@ -170,6 +175,7 @@ fn pull_placements<R:Rng>(
     problem:&Problem,
     power:f64,
     musician_groups:&HashMap<usize, Vec<usize>>,
+    active_attendees:&HashSet<usize>,
     rng:&mut R) {
 
     let mut max_v = 0.0;
@@ -183,8 +189,9 @@ fn pull_placements<R:Rng>(
         let mut vy = 0.0;
         if rng.gen_bool(0.03) {
 
-            for attendee in &problem.attendees
+            for i in active_attendees.iter()
             {
+                let attendee = &problem.attendees[*i];
                 let dx = p1.x - attendee.x;
                 let dy = p1.y - attendee.y;
                 let d2 = dx * dx + dy * dy;
@@ -195,16 +202,18 @@ fn pull_placements<R:Rng>(
 
             let v = (vx * vx + vy * vy).sqrt();
 
-            for j in musician_groups.get(&problem.musicians[i]).unwrap()
-            {
-                if *j == i { continue; }
-                if rng.gen_bool(0.5) { continue; }
-                let p2 = placements[*j];
-                let dx = p2.x - p1.x;
-                let dy = p2.y - p1.y;
-                let d = (dx * dx + dy * dy).sqrt();
-                vx += dx / d * v / 3.0;
-                vy += dy / d * v / 3.0;
+            if grouping {
+                for j in musician_groups.get(&problem.musicians[i]).unwrap()
+                {
+                    if *j == i { continue; }
+                    if rng.gen_bool(0.5) { continue; }
+                    let p2 = placements[*j];
+                    let dx = p2.x - p1.x;
+                    let dy = p2.y - p1.y;
+                    let d = (dx * dx + dy * dy).sqrt();
+                    vx += dx / d * v / 3.0;
+                    vy += dy / d * v / 3.0;
+                }
             }
         }
         let rate = rng.gen_range(0.0..1.0);
