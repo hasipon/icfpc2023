@@ -1,0 +1,16 @@
+{
+  "version": "0.2.1",
+  "defaults": {},
+  "configurations": [
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "inada2.exe (inada2\\inada2.exe)",
+      "name": "inada2.exe (inada2\\inada2.exe)",
+      "env": {
+        "REPO_ROOT": "C:\\projects\\hasipon\\icfpc2023",
+        "PROBLEM_ID": "1",
+      }
+    }
+  ]
+}
