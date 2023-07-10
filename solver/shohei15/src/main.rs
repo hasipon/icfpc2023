@@ -88,7 +88,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         {
             let mut placements = max_result.clone();
             let swaps = rng.gen_bool(0.04);
-            if !swaps || rng.gen_bool(0.95) 
+            if !swaps || rng.gen_bool(0.9) 
             {
                 while !randomize(&mut placements, &problem, 300.0 / (i * 2) as f64, (i * 2) as f64, &mut rng)
                 {
