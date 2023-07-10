@@ -82,9 +82,9 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let mut max_score = init_score;
     let mut max_result = best.placements;
 
-    for j in 1..20
+    for j in 1..5
     {
-        for i in 1..40 * j
+        for i in 5..110 * j
         {
             let mut placements = max_result.clone();
             while !randomize(&mut placements, &problem, 300.0 / i as f64, i as f64, &mut rng)
@@ -99,7 +99,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
                     break;
                 }
             }
-            if rng.gen_bool(0.02) {
+            if rng.gen_bool(0.03) {
                 try_swap(&problem, &mut placements, &mut rng, &mut SwapState::new(&problem));
             }
             let score = s_eval(&problem, &placements, &mut volumes);
