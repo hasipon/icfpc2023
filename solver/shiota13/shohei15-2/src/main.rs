@@ -49,9 +49,10 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     let mut max_score = init_score;
     let mut max_result = best.placements;
 
-    for j in 1..6
+    while(true)
     {
-        for i in 1..180 * j
+        let mut found = false;
+        for i in 1..180
         {
             let mut placements = max_result.clone();
             let swaps = rng.gen_bool(0.04);
@@ -80,7 +81,11 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
                 max_score = score;
                 max_result = placements;
                 eprintln!("max_score: {}", max_score);
+                found = true
             }
+        }
+        if !found {
+            break;
         }
     }
     if max_score > init_score * 1.001
@@ -90,7 +95,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         let answer_string = serde_json::to_string(&answer)?;
         let name = format!("shohei15-2-{}-{}", seed, "shiota-13");
         fs::write(
-            format!("../../../solutions/{}-{}", index, name),
+            format!("../../../solutions/{}-{}.json", index, name),
             &answer_string
         )?;
         fs::write(
