@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -214,16 +216,29 @@ func handleWorkerEnd(run *SolverRun) {
 
 	// copy solution
 	if run.StdOutPath != "" {
+		var lastValidJSON []byte
 		stdout, err := os.ReadFile(run.StdOutPath)
 		if err != nil {
 			log.Println("os.ReadFile(run.StdOutPath) Error:", err)
 		} else if len(stdout) == 0 {
 			log.Printf("[Problem:%d] stdout is empty", run.ProblemID)
-		} else if !json.Valid(stdout) {
-			log.Printf("[Problem:%d] stdout not JSON: %s", run.ProblemID, string(stdout))
+		} else if json.Valid(stdout) {
+			lastValidJSON = stdout
 		} else {
+			log.Printf("[Problem:%d] stdout is invalid JSON. Trying scan last line..", run.ProblemID)
+			sc := bufio.NewScanner(bytes.NewReader(stdout))
+			sc.Split(bufio.ScanLines)
+			for sc.Scan() {
+				if json.Valid(sc.Bytes()) {
+					lastValidJSON = lastValidJSON[:0]
+					lastValidJSON = append(lastValidJSON, sc.Bytes()...)
+				}
+			}
+		}
+
+		if 0 < len(lastValidJSON) {
 			filePath := path.Join(conf.RepoRoot, "solutions", run.SolutionFileName)
-			err := os.WriteFile(filePath, stdout, 0644)
+			err := os.WriteFile(filePath, lastValidJSON, 0644)
 			if err != nil {
 				log.Printf("[Problem:%d] os.WriteFile Error: %v File: %v", run.ProblemID, err, filePath)
 			} else {
@@ -232,6 +247,8 @@ func handleWorkerEnd(run *SolverRun) {
 					gitAdd(run.SolutionFileName)
 				}
 			}
+		} else {
+			log.Printf("[Problem:%d] No valid output found", run.ProblemID)
 		}
 	}
 }
@@ -239,6 +256,8 @@ func handleWorkerEnd(run *SolverRun) {
 func fileExists(filename string) bool {
 	info, err := os.Stat(filename)
 	if os.IsNotExist(err) {
+		return false
+	} else if err != nil {
 		return false
 	}
 	return !info.IsDir()
