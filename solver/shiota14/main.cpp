@@ -456,6 +456,12 @@ int main() {
         if (i > 0) cout << ",";
         cout << "{\"x\":" << placement[i].first << ",\"y\":" << placement[i].second << "}";
     }
+    cout << "],";
+    cout << "\"volumes\":[";
+    for (unsigned i = 0; i < placement.size(); i++) {
+        if (i > 0) cout << ",";
+        cout << "10";
+    }
     cout << "]}" << endl;
 
     auto res = calcScore(problem, placement);
