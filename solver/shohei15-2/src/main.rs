@@ -133,7 +133,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         {
             best_name.remove(0); 
         }
-        let name = format!("shohei15-3-{}-{}", seed, best_name);
+        let name = format!("shohei15-4-{}-{}", seed, best_name);
         fs::write(
             format!("../../solutions/{}-{}", index, name), 
             &answer_string
