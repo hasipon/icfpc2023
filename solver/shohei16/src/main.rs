@@ -18,8 +18,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let timestamp = Utc::now().timestamp();
 
     let args: Vec<String> = env::args().collect();
-    let id = if args.len() <= 1 { "9" } else { &args[1] };
-    solve(id, timestamp)?;
+    
+    if args.len() <= 1 {
+        for i in 19..20
+        { 
+            solve(&format!("{}", i), timestamp)?;
+        } 
+    } else { 
+        solve(&args[1], timestamp)?; 
+    };
+    
 
     Ok(())
 }
@@ -43,6 +51,7 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
     // 最善解をとってくる
     let mut best_score = -1.0;
     let mut best_name:String = String::new();
+    let mut best_data:String = String::new();
 
     let paths = fs::read_dir("../../solutions/").unwrap();
     for path in paths {
@@ -60,25 +69,30 @@ fn solve(index:&str, timestamp:i64) -> Result<(), Box<dyn std::error::Error>> {
         };
         let mut buf = String::new();
         submission.read_to_string(&mut buf)?;
-        let score:f64 = match serde_json::from_str::<Submission>(&buf)
+        let score:f64;
+        let contents:String;
+        match serde_json::from_str::<Submission>(&buf)
         {
-            Ok(submission) => submission.Success.submission.score.Success,
+            Ok(submission) => {
+                score = submission.Success.submission.score.Success;
+                contents = submission.Success.contents;
+            }
             Err(err) => {
-                //println!("error:{}", err);
+                // println!("error:{}", err);
                 continue;
             }
         };
         if score > best_score {
             best_name = name.to_string();
             best_score = score;
+            best_data = contents;
         }
     }
-    let mut best_file = File::open(format!("../../solutions/{}", best_name))?;
-    let mut buf = String::new();
-    best_file.read_to_string(&mut buf)?;
-    let mut best:Answer = serde_json::from_str(&buf)?;
+    let mut best:Answer = serde_json::from_str(&best_data)?;
     let init_score = s_eval(&problem, &best.placements, &mut volumes);
-    println!("{}:{} {}", index, init_score, best_score);
+    println!("{}:{} {} {}", index, best_name, init_score, best_score);
+    return Ok(());
+
     let mut max_score = init_score;
     let mut max_result = best.placements;
     let musician_groups = SwapState::new(&problem).musician_groups;

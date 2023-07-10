@@ -41,6 +41,7 @@ impl SwapState {
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct EvalNode {
     pub d:f64,
+    pub d2:f64,
     pub dir:f64,
     pub kind:EvalNodeKind
 }
@@ -81,10 +82,15 @@ pub struct Sight {
 pub fn s_eval(problem:&Problem, placements:&Vec<Point>, volumes:&mut Vec<f64>) -> f64 {
     let mut cache = SwapState::new(&problem);
     let mut result = 0.0;
+    let mut c = 0;
     for i in 0..placements.len()
     {
         let (score, volume) = s_eval_placement(problem, placements, i, true, &mut cache);
         result += score;
+        if score > 0.0 {
+            c += 1;
+            println!("{}", c);
+        }
         volumes[i] = volume;
     }
     result
@@ -94,7 +100,8 @@ pub fn s_eval(problem:&Problem, placements:&Vec<Point>, volumes:&mut Vec<f64>) -
 pub fn s_eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, total:bool, cache:&mut SwapState) -> (f64, f64) {
     let mut nearest_d = std::f64::INFINITY;
     let mut nearest_dir = 0.0;
-    let center = placements[index];
+    let mut center = placements[index];
+    center.x -= 1.0;
 
     if cache.placement_sights[index].is_none()
     {
@@ -105,8 +112,9 @@ pub fn s_eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, t
             if *p == center || i == index { continue; }
             let dx = p.x - center.x;
             let dy = p.y - center.y;
-            let d = (dx * dx + dy * dy).sqrt();
-            let asin = if d <= 5.0 { 
+            let d2 = dx * dx + dy * dy;
+            let d = d2.sqrt();
+            let asin = if d < 5.0 { 
                 std::f64::consts::PI / 2.0 
             } else {
                 (5.0 / d).asin()
@@ -116,6 +124,7 @@ pub fn s_eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, t
                 EvalNode {
                     dir,
                     d,
+                    d2,
                     kind:EvalNodeKind::Start(asin * 2.0),
                 }
             );
@@ -129,7 +138,8 @@ pub fn s_eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, t
         {
             let dx = p.center.0 - center.x;
             let dy = p.center.1 - center.y;
-            let d = (dx * dx + dy * dy).sqrt();
+            let d2 = dx * dx + dy * dy;
+            let d = d2.sqrt();
             let asin = if d <= p.radius { 
                 std::f64::consts::PI / 2.0 
             } else {
@@ -140,6 +150,7 @@ pub fn s_eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, t
                 EvalNode {
                     dir,
                     d,
+                    d2,
                     kind:EvalNodeKind::Start(asin * 2.0),
                 }
             );
@@ -153,12 +164,14 @@ pub fn s_eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, t
         {
             let dx = a.x - center.x;
             let dy = a.y - center.y;
-            let d = (dx * dx + dy * dy).sqrt();
+            let d2 = dx * dx + dy * dy;
+            let d = d2.sqrt();
             let dir = dx.atan2(dy); 
             nodes.push(
                 EvalNode {
                     dir,
                     d,
+                    d2,
                     kind:EvalNodeKind::Center(i),
                 }
             );
@@ -182,12 +195,13 @@ pub fn s_eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, t
             {
                 heap.pop();
             }
+            let mut blocked = false;
             match &node.kind
             {
                 &EvalNodeKind::Start(_) => { heap.push(node.clone()); }
                 &EvalNodeKind::Center(aindex) => {
                     if heap.peek().is_none() || node.d < heap.peek().unwrap().d {
-                        sights.push(Sight{attendee:aindex, d2: node.d * node.d });
+                        sights.push(Sight{attendee:aindex, d2: node.d2 });
                     }
                 },
             }
@@ -198,7 +212,8 @@ pub fn s_eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, t
     let mut result = 0.0;
     for sight in cache.placement_sights[index].as_ref().unwrap() {
         let a = &problem.attendees[sight.attendee];
-        result += (1000000.0 * a.tastes[problem.musicians[index]] / sight.d2).ceil();
+        let value = (1000000.0 * a.tastes[problem.musicians[index]] / sight.d2).ceil();
+        result += value;
     }
     cache.placement_score[index] = result;
 
@@ -222,6 +237,11 @@ pub fn s_eval_placement(problem:&Problem, placements:&Vec<Point>, index:usize, t
         {
             result += bonus;
         }
+    }
+    
+    let len =  cache.placement_sights[index].as_ref().unwrap().len();
+    if len > 0 {
+        println!("{}:{} {:?} {}", len, index, center, result);
     }
     if result < 0.0 {(0.0, 0.0)} else {(result * 10.0, 10.0)}
 }
