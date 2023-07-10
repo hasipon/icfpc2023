@@ -9,7 +9,17 @@
       "name": "inada2.exe (inada2\\inada2.exe)",
       "env": {
         "REPO_ROOT": "C:\\projects\\hasipon\\icfpc2023",
-        "PROBLEM_ID": "1",
+        "PROBLEM_ID": "1"
+      }
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "inada3.exe (inada3\\inada3.exe)",
+      "name": "inada3.exe (inada3\\inada3.exe)",
+      "env": {
+        "REPO_ROOT": "C:\\projects\\hasipon\\icfpc2023",
+        "PROBLEM_ID": "1"
       }
     }
   ]
